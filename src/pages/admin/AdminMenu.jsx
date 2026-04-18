@@ -28,6 +28,9 @@ export default function AdminMenu() {
     description: '',
     active: true,
     sortOrder: 0,
+    couponCode: '',
+    discountPercent: '',
+    discountFlat: '',
   });
   const [offerStatus, setOfferStatus] = useState('');
   const [busyOfferId, setBusyOfferId] = useState(null);
@@ -138,6 +141,9 @@ export default function AdminMenu() {
           description: offerForm.description.trim(),
           active: offerForm.active,
           sortOrder: Number(offerForm.sortOrder) || 0,
+          couponCode: offerForm.couponCode.trim(),
+          discountPercent: offerForm.discountPercent === '' ? 0 : Number(offerForm.discountPercent),
+          discountFlat: offerForm.discountFlat === '' ? 0 : Number(offerForm.discountFlat),
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -152,6 +158,9 @@ export default function AdminMenu() {
         description: '',
         active: true,
         sortOrder: 0,
+        couponCode: '',
+        discountPercent: '',
+        discountFlat: '',
       });
       loadOffers();
     } catch {
@@ -405,6 +414,53 @@ export default function AdminMenu() {
               placeholder="Terms, dates, or how the offer works"
             />
           </div>
+          <div>
+            <label htmlFor={`${formIds}-offer-coupon`} className="block text-sm font-medium text-slate-800 mb-1.5">
+              Checkout coupon code
+            </label>
+            <input
+              id={`${formIds}-offer-coupon`}
+              className={inputClass}
+              value={offerForm.couponCode}
+              onChange={(e) => setOfferForm((f) => ({ ...f, couponCode: e.target.value }))}
+              placeholder="e.g. GZ25 (optional)"
+              autoComplete="off"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label htmlFor={`${formIds}-offer-pct`} className="block text-sm font-medium text-slate-800 mb-1.5">
+                Discount % (subtotal)
+              </label>
+              <input
+                id={`${formIds}-offer-pct`}
+                type="number"
+                min="0"
+                max="100"
+                className={inputClass}
+                value={offerForm.discountPercent}
+                onChange={(e) => setOfferForm((f) => ({ ...f, discountPercent: e.target.value }))}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label htmlFor={`${formIds}-offer-flat`} className="block text-sm font-medium text-slate-800 mb-1.5">
+                Or flat ₹ off
+              </label>
+              <input
+                id={`${formIds}-offer-flat`}
+                type="number"
+                min="0"
+                className={inputClass}
+                value={offerForm.discountFlat}
+                onChange={(e) => setOfferForm((f) => ({ ...f, discountFlat: e.target.value }))}
+                placeholder="0"
+              />
+            </div>
+          </div>
+          <p className="md:col-span-2 text-xs text-slate-500">
+            If both % and flat are set, <strong>percent</strong> is used. Codes are matched at checkout (case-insensitive).
+          </p>
           <div className="md:col-span-2 flex flex-wrap items-center gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -436,6 +492,13 @@ export default function AdminMenu() {
                     {o.subtitle && <div className="text-sm text-delivery-800 mt-0.5">{o.subtitle}</div>}
                     {o.description && (
                       <p className="text-sm text-slate-600 mt-2 line-clamp-2">{o.description}</p>
+                    )}
+                    {(o.couponCode || o.discountPercent || o.discountFlat) && (
+                      <p className="text-xs font-mono text-delivery-800 mt-2">
+                        Coupon: {o.couponCode || '—'}
+                        {Number(o.discountPercent) > 0 && ` · ${o.discountPercent}% off subtotal`}
+                        {Number(o.discountPercent) <= 0 && Number(o.discountFlat) > 0 && ` · ₹${o.discountFlat} off`}
+                      </p>
                     )}
                     <p className="text-xs text-slate-400 mt-1">Order: {o.sortOrder ?? 0}</p>
                   </div>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -6,6 +7,120 @@ import fallbackMenu from '../assets/fallbackMenu.json';
 
 const shell =
   'mx-auto w-full max-w-[min(1700px,95vw)] px-4 sm:px-6 md:px-8 xl:px-10 2xl:px-12';
+
+/** Local demo when /api/offers is empty or unreachable (matches hero-style banner) */
+const DEMO_PROMO_OFFERS = [
+  {
+    _id: 'local-demo-promo',
+    title: '25% OFF ALL BURGERS THIS WEEK!',
+    subtitle: 'Fresh patties · limited time',
+    description: 'Use code GZ25 at checkout.',
+    active: true,
+    sortOrder: 0,
+    couponCode: 'GZ25',
+    discountPercent: 25,
+    discountFlat: 0,
+  },
+];
+
+function extractPromoCode(text) {
+  if (!text || typeof text !== 'string') return null;
+  const explicit = text.match(/(?:code|CODE)\s*[#:]?\s*([A-Z0-9]{4,})\b/);
+  if (explicit) return explicit[1];
+  const loose = text.match(/\b([A-Z]{2,}\d{2,}|[A-Z0-9]{5,})\b/);
+  return loose ? loose[1] : null;
+}
+
+function OfferDescriptionInfo({ description, idPrefix = 'offer' }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef(null);
+  const panelRef = useRef(null);
+  const text = typeof description === 'string' ? description.trim() : '';
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => {
+      if (rootRef.current?.contains(e.target)) return;
+      if (panelRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
+  if (!text) return null;
+
+  const panelId = `${idPrefix}-offer-desc`;
+
+  const modal =
+    open &&
+    createPortal(
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
+        <button
+          type="button"
+          className="absolute inset-0 bg-charcoal-900/45 backdrop-blur-[2px]"
+          aria-label="Close offer details"
+          onClick={() => setOpen(false)}
+        />
+        <div
+          ref={panelRef}
+          id={panelId}
+          role="dialog"
+          aria-modal="true"
+          className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-slate-200/95 bg-white text-left shadow-2xl"
+        >
+          <div className="max-h-[min(70vh,26rem)] overflow-y-auto overscroll-y-contain px-5 py-4 text-sm leading-relaxed text-slate-700 [scrollbar-width:thin] [scrollbar-color:rgb(203_213_225)_transparent]">
+            {text}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+
+  return (
+    <>
+      <span ref={rootRef} className="inline-flex shrink-0 align-middle">
+        <button
+          type="button"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-white/5 text-delivery-300 transition hover:bg-white/12 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-delivery-400/60"
+          aria-expanded={open}
+          aria-controls={panelId}
+          aria-haspopup="dialog"
+          aria-label="Offer details"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </button>
+      </span>
+      {modal}
+    </>
+  );
+}
 
 function groupItemsByCategory(items) {
   const map = new Map();
@@ -77,7 +192,7 @@ function MenuListItem({ item, dispatch, canOrder }) {
 =========================== */
 function SpecialCard({ item, dispatch, canOrder }) {
   return (
-    <div className="min-w-[280px] w-[280px] snap-center group rounded-[20px] bg-white/70 backdrop-blur-md border border-white/20 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-3 hover:bg-white/80 flex flex-col justify-between overflow-hidden relative">
+    <div className="min-w-[280px] w-[280px] shrink-0 snap-center group rounded-[20px] bg-white/70 backdrop-blur-md border border-white/20 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-3 hover:bg-white/80 flex flex-col justify-between overflow-hidden relative">
       <div className="absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br from-delivery-100/50 to-transparent rounded-full blur-2xl pointer-events-none" />
       <div>
         <div className="flex justify-between items-center mb-3">
@@ -111,6 +226,7 @@ export default function Menu() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [dietFilter, setDietFilter] = useState('All'); // 'All', 'Veg', 'Non-Veg'
   const [usingFallbackMenu, setUsingFallbackMenu] = useState(false);
+  const [promoOffers, setPromoOffers] = useState(DEMO_PROMO_OFFERS);
 
   const { cart, dispatch } = useCart();
   const { isAdmin } = useAuth();
@@ -144,6 +260,19 @@ export default function Menu() {
       });
   }, []);
 
+  useEffect(() => {
+    fetch('/api/offers')
+      .then((res) => {
+        if (!res.ok) throw new Error('Offers unavailable');
+        return res.json();
+      })
+      .then((data) => {
+        const list = Array.isArray(data) ? data.filter((o) => o && o.active !== false) : [];
+        setPromoOffers(list.length > 0 ? list : DEMO_PROMO_OFFERS);
+      })
+      .catch(() => setPromoOffers(DEMO_PROMO_OFFERS));
+  }, []);
+
   const grouped = useMemo(() => groupItemsByCategory(items), [items]);
   const categories = grouped.map(([cat]) => cat);
 
@@ -163,20 +292,34 @@ export default function Menu() {
   }, [items, activeCategory, dietFilter]);
 
   const specials = useMemo(() => {
-    const specialItems = items.filter(item => item.isSpecial);
-    if (specialItems.length > 0) return specialItems;
-    
-    // Hardcoded demo specials for UI presentation
-    return [
+    const demoSpecials = [
       { _id: 'sp1', name: 'Truffle Fries', category: 'Sides', veg: true, halfPrice: 120, fullPrice: 200, isSpecial: true },
       { _id: 'sp2', name: 'Neon Nachos', category: 'Mexican', veg: true, halfPrice: 150, fullPrice: 280, isSpecial: true },
       { _id: 'sp3', name: 'Kimchi Bao', category: 'Asian', veg: false, halfPrice: 180, fullPrice: 320, isSpecial: true },
       { _id: 'sp4', name: 'Avo-Toast Art', category: 'Breakfast', veg: true, halfPrice: 160, fullPrice: 290, isSpecial: true },
       { _id: 'sp5', name: 'Galaxy Macarons', category: 'Dessert', veg: true, halfPrice: 200, fullPrice: 350, isSpecial: true },
     ];
+    const specialItems = items.filter((item) => item.isSpecial);
+    const nameKey = (item) => String(item.name || '').trim().toLowerCase();
+
+    if (specialItems.length >= 2) return specialItems;
+    if (specialItems.length === 1) {
+      const seen = new Set(specialItems.map(nameKey));
+      const extras = demoSpecials.filter((d) => !seen.has(nameKey(d)));
+      return [...specialItems, ...extras];
+    }
+    return demoSpecials;
   }, [items]);
 
   const cartCount = cart.items.reduce((s, i) => s + i.quantity, 0);
+
+  const featuredPromo = promoOffers[0];
+  const morePromos = promoOffers.slice(1);
+  const promoCode =
+    featuredPromo &&
+    (String(featuredPromo.couponCode || '').trim() ||
+      extractPromoCode(featuredPromo.description) ||
+      extractPromoCode(featuredPromo.subtitle));
 
   return (
     <main className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen pb-16 selection:bg-delivery-200 selection:text-delivery-900">
@@ -228,40 +371,86 @@ export default function Menu() {
             )}
           </div>
 
-          {/* Floating Island Promotion */}
-          <div className="relative overflow-hidden rounded-[32px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500 hover:-translate-y-1">
-            {/* Subtle glow effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
-            <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(252,128,25,0.15),transparent_50%)] pointer-events-none" />
-            
-            <div className="relative p-8 md:p-12 lg:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="max-w-2xl">
-                <p className="text-delivery-300 font-bold tracking-widest uppercase text-xs mb-3">Limited Time Offer</p>
-                <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] mb-4">
-                  25% OFF ALL <br className="hidden md:block" />BURGERS THIS WEEK!
-                </h2>
-                <div className="flex items-center gap-3 mt-6">
-                  <span className="text-slate-300 font-medium">Use Code:</span>
-                  <span className="bg-delivery-500/20 border border-delivery-400/30 text-delivery-300 font-mono font-bold px-4 py-1.5 rounded-lg text-lg tracking-wider backdrop-blur-md">GZ25</span>
+          {/* Floating Island Promotion — data from /api/offers, demo if unavailable */}
+          {featuredPromo && (
+            <div className="relative overflow-hidden rounded-[32px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+              <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(252,128,25,0.15),transparent_50%)] pointer-events-none" />
+
+              <div className="relative p-8 md:p-12 lg:p-16 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                <div className="max-w-2xl w-full min-w-0">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <p className="text-delivery-300 font-bold tracking-widest uppercase text-xs">
+                      Promotional offer
+                    </p>
+                    <OfferDescriptionInfo
+                      description={featuredPromo.description}
+                      idPrefix="featured"
+                    />
+                  </div>
+                  <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.12] text-balance break-words whitespace-pre-line">
+                    {featuredPromo.title}
+                  </h2>
+                  {featuredPromo.subtitle ? (
+                    <p className="mt-3 text-base sm:text-lg font-medium text-slate-300 leading-snug">
+                      {featuredPromo.subtitle}
+                    </p>
+                  ) : null}
+                  {promoCode ? (
+                    <div className="flex flex-wrap items-center gap-3 mt-6">
+                      <span className="text-slate-300 font-medium">Use code</span>
+                      <span className="bg-delivery-500/20 border border-delivery-400/30 text-delivery-300 font-mono font-bold px-4 py-1.5 rounded-lg text-base sm:text-lg tracking-wider backdrop-blur-md">
+                        {promoCode}
+                      </span>
+                    </div>
+                  ) : null}
+                  {morePromos.length > 0 ? (
+                    <div className="mt-8 pt-6 border-t border-white/10">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-delivery-300/90 mb-3">
+                        More offers
+                      </p>
+                      <ul className="space-y-2.5">
+                        {morePromos.map((o, idx) => (
+                          <li
+                            key={o._id || o.title}
+                            className="flex items-start gap-2 text-sm text-slate-300 leading-snug"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="font-semibold text-white">{o.title}</span>
+                              {o.subtitle ? (
+                                <span className="text-slate-400"> — {o.subtitle}</span>
+                              ) : null}
+                            </span>
+                            <OfferDescriptionInfo description={o.description} idPrefix={`more-${idx}`} />
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* 🔥 SPECIALS SECTION */}
         {specials.length > 0 && (
-          <section className="animate-float-up opacity-0 delay-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Specials</h3>
-              <button className="text-sm font-semibold text-delivery-600 hover:text-delivery-700 transition-colors flex items-center gap-1">
-                See All Specials
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
-              </button>
+          <section className="animate-float-up opacity-0 delay-200" aria-labelledby="specials-heading">
+            <div className="mb-3 flex flex-col gap-1 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
+              <h3 id="specials-heading" className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">
+                Specials
+              </h3>
+              {specials.length > 2 && (
+                <p className="text-xs font-medium text-slate-500">Swipe or scroll sideways for more</p>
+              )}
             </div>
-            {/* Horizontal Scroll Container */}
-            <div className="flex overflow-x-auto gap-4 pb-6 pt-2 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div
+              className="specials-strip snap-x snap-mandatory pb-4 pt-2 -mx-4 px-4 sm:mx-0 sm:px-0 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-delivery-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#FDFDFD]"
+              role="region"
+              aria-label="Chef specials, scroll horizontally for more"
+              tabIndex={0}
+            >
               {specials.map((item) => (
                 <SpecialCard
                   key={item._id || item.name}

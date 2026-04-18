@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useSession } from '../context/SessionContext.jsx';
@@ -13,6 +13,10 @@ export default function Checkout() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponError, setCouponError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -28,9 +32,48 @@ export default function Checkout() {
         if (c.address) setAddress(c.address);
         if (c.orderType === 'takeaway' || c.orderType === 'delivery') setOrderType(c.orderType);
         if (c.paymentMethod === 'UPI' || c.paymentMethod === 'COD') setPayment(c.paymentMethod);
+        if (c.couponCode && typeof c.couponCode === 'string') setCouponInput(c.couponCode);
       })
       .catch(() => {});
   }, [sessionId]);
+
+  const validateAndApplyCoupon = useCallback(
+    async (code, subtotalAmount) => {
+      const trimmed = String(code || '').trim();
+      if (!trimmed) {
+        setAppliedCoupon(null);
+        setCouponError('');
+        return;
+      }
+      setCouponBusy(true);
+      setCouponError('');
+      try {
+        const res = await fetch('/api/offers/validate-coupon', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: trimmed, subtotal: subtotalAmount }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (data.valid) {
+          setAppliedCoupon({
+            code: data.couponCode,
+            discountAmount: data.discountAmount,
+            title: data.title,
+          });
+          setCouponInput(data.couponCode);
+        } else {
+          setAppliedCoupon(null);
+          setCouponError(data.message || 'Invalid code');
+        }
+      } catch {
+        setAppliedCoupon(null);
+        setCouponError('Could not validate coupon');
+      } finally {
+        setCouponBusy(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!sessionId || !storageReady) return undefined;
@@ -45,17 +88,42 @@ export default function Checkout() {
             address,
             orderType,
             paymentMethod: payment,
+            couponCode: appliedCoupon?.code || couponInput || '',
           },
         }),
       }).catch(() => {});
     }, 650);
     return () => clearTimeout(t);
-  }, [name, phone, address, orderType, payment, sessionId, storageReady]);
+  }, [
+    name,
+    phone,
+    address,
+    orderType,
+    payment,
+    sessionId,
+    storageReady,
+    appliedCoupon?.code,
+    couponInput,
+  ]);
 
   const subtotal = cart.total;
-  const tax = Math.round(subtotal * 0.05);
+  const discountAmount = appliedCoupon ? Math.min(appliedCoupon.discountAmount, subtotal) : 0;
+  const afterDiscount = Math.max(0, subtotal - discountAmount);
+  const tax = Math.round(afterDiscount * 0.05);
   const delivery = orderType === 'delivery' && subtotal > 0 ? 30 : 0;
-  const grandTotal = subtotal + tax + delivery;
+  const grandTotal = afterDiscount + tax + delivery;
+
+  useEffect(() => {
+    if (!appliedCoupon?.code) return undefined;
+    if (cart.total <= 0) {
+      setAppliedCoupon(null);
+      return undefined;
+    }
+    const t = setTimeout(() => {
+      validateAndApplyCoupon(appliedCoupon.code, cart.total);
+    }, 450);
+    return () => clearTimeout(t);
+  }, [cart.total, appliedCoupon?.code, validateAndApplyCoupon]);
 
   const placeOrder = async () => {
     setError('');
@@ -95,16 +163,29 @@ export default function Checkout() {
           orderType,
           sessionId,
           zone: 'Zone 1 (0-3km)',
+          couponCode: appliedCoupon?.code || '',
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(
+          data.error ||
+            (data.serverTotal != null
+              ? `Total mismatch — expected ₹${data.serverTotal}. Refresh and try again.`
+              : 'Could not place order.'),
+        );
+        return;
+      }
       if (data.success && data.orderNo) {
         dispatch({ type: 'CLEAR_CART' });
         if (sessionId) {
           await fetch(`/api/sessions/${sessionId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ cart: { items: [], total: 0 } }),
+            body: JSON.stringify({
+              cart: { items: [], total: 0 },
+              checkout: { couponCode: '' },
+            }),
           }).catch(() => {});
         }
         navigate(
@@ -194,11 +275,71 @@ export default function Checkout() {
         </div>
       </div>
 
+      {cart.items.length > 0 && (
+        <div className="panel p-6 md:p-8 mb-8 space-y-3">
+          <h3 className="font-display font-semibold text-lg text-slate-900">Promo code</h3>
+          <p className="text-sm text-slate-600">
+            Enter a code from our menu offers. Discount applies to subtotal before tax.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              className="input-field min-h-[44px] flex-1 font-mono uppercase tracking-wide"
+              placeholder="e.g. GZ25"
+              value={couponInput}
+              onChange={(e) => {
+                setCouponInput(e.target.value);
+                setCouponError('');
+              }}
+              autoComplete="off"
+              spellCheck={false}
+            />
+            <button
+              type="button"
+              disabled={couponBusy || !couponInput.trim()}
+              onClick={() => validateAndApplyCoupon(couponInput, subtotal)}
+              className="btn-primary min-h-[44px] px-6 rounded-xl shrink-0 disabled:opacity-50"
+            >
+              {couponBusy ? 'Checking…' : 'Apply'}
+            </button>
+            {appliedCoupon && (
+              <button
+                type="button"
+                className="btn-secondary min-h-[44px] px-4 rounded-xl shrink-0"
+                onClick={() => {
+                  setAppliedCoupon(null);
+                  setCouponError('');
+                }}
+              >
+                Remove
+              </button>
+            )}
+          </div>
+          {couponError && (
+            <p className="text-sm text-rose-600" role="alert">
+              {couponError}
+            </p>
+          )}
+          {appliedCoupon && !couponError && (
+            <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+              Applied <strong>{appliedCoupon.code}</strong>
+              {appliedCoupon.title ? ` — ${appliedCoupon.title}` : ''}. You save{' '}
+              <strong className="tabular-nums">₹{discountAmount}</strong> on this order.
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="panel p-6 mb-8 space-y-2 text-slate-700">
         <div className="flex justify-between text-sm">
           <span className="text-slate-600">Subtotal</span>
           <span className="tabular-nums">₹{subtotal}</span>
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between text-sm text-emerald-800">
+            <span>Promo discount</span>
+            <span className="tabular-nums font-medium">−₹{discountAmount}</span>
+          </div>
+        )}
         <div className="flex justify-between text-sm">
           <span className="text-slate-600">GST (5%)</span>
           <span className="tabular-nums">₹{tax}</span>

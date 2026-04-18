@@ -16,7 +16,8 @@
     "veg": false,
     "halfPrice": 90,
     "fullPrice": 160,
-    "available": true
+    "available": true,
+    "isSpecial": true
   },
   {
     "_id": "demo3",
@@ -34,7 +35,8 @@
     "veg": true,
     "halfPrice": 150,
     "fullPrice": 280,
-    "available": true
+    "available": true,
+    "isSpecial": true
   },
   {
     "_id": "demo5",

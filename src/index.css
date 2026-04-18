@@ -297,4 +297,31 @@
   .delay-100 { animation-delay: 100ms; }
   .delay-200 { animation-delay: 200ms; }
   .delay-300 { animation-delay: 300ms; }
+
+  /** Horizontal scroll for menu specials — thin bar, touch momentum */
+  .specials-strip {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgb(148 163 184 / 0.55) rgb(241 245 249 / 0.85);
+  }
+
+  .specials-strip::-webkit-scrollbar {
+    height: 7px;
+  }
+
+  .specials-strip::-webkit-scrollbar-thumb {
+    background-color: rgb(148 163 184 / 0.55);
+    border-radius: 9999px;
+  }
+
+  .specials-strip::-webkit-scrollbar-track {
+    background: rgb(241 245 249 / 0.85);
+    border-radius: 9999px;
+  }
 }

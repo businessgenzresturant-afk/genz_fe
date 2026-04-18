@@ -37,7 +37,7 @@ export default function NotificationPrompt({ description }) {
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-xl border border-brand-200/90 bg-brand-50/90 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 rounded-xl border border-delivery-200/90 bg-delivery-50/90 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-slate-700">{description}</p>
       <button
         type="button"

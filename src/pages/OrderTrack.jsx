@@ -202,7 +202,7 @@ export default function OrderTrack() {
                     <button
                       type="button"
                       onClick={() => navigate(href)}
-                      className="min-w-0 flex-1 text-left font-medium text-brand-800 hover:text-brand-950 hover:underline"
+                      className="min-w-0 flex-1 text-left font-medium text-delivery-800 hover:text-delivery-900 hover:underline"
                     >
                       {entry.orderNo ? (
                         <span className="tabular-nums">#{entry.orderNo}</span>
@@ -268,7 +268,7 @@ export default function OrderTrack() {
             </label>
             <button
               type="submit"
-              className="rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+              className="rounded-xl bg-gradient-to-r from-delivery-500 to-flame-500 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:brightness-105"
             >
               Track
             </button>
@@ -295,7 +295,7 @@ export default function OrderTrack() {
           <p className="text-rose-800 font-medium">{error || 'Unknown error'}</p>
           <button
             type="button"
-            className="text-sm font-semibold text-brand-700 hover:text-brand-900 underline-offset-2 hover:underline"
+            className="text-sm font-bold text-delivery-700 hover:text-delivery-900 underline-offset-2 hover:underline"
             onClick={() => {
               removeTrackOrderFromHistory({ id: trackId || undefined, orderNo: urlOrderNo || undefined });
               navigate('/track', { replace: true });
@@ -315,11 +315,11 @@ export default function OrderTrack() {
 
   return (
     <div className="page-fill p-4 max-w-3xl mx-auto pb-16">
-      <div className="panel p-6 md:p-8 mb-8 bg-gradient-to-br from-brand-50/50 to-white border-brand-100">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-slate-900 mb-1">
+      <div className="panel p-6 md:p-8 mb-8 rounded-3xl bg-gradient-to-br from-delivery-50/80 via-white to-orange-50/40 border-delivery-100">
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-ink mb-1">
           Order #{order.orderNo}
         </h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-ink-muted">
           {rejected ? 'This order was not accepted.' : 'Live updates from the restaurant'}
         </p>
       </div>
@@ -343,15 +343,15 @@ export default function OrderTrack() {
             return (
               <div key={step.key} className="flex items-center gap-4">
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-sm ${
-                    done ? 'bg-emerald-600' : current ? 'bg-brand-600' : 'bg-slate-300'
+                  className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold shrink-0 text-sm shadow-md ${
+                    done ? 'bg-emerald-500' : current ? 'bg-gradient-to-br from-delivery-500 to-flame-500' : 'bg-slate-300'
                   }`}
                   aria-hidden="true"
                 >
                   {idx + 1}
                 </div>
                 <div>
-                  <div className={`font-semibold ${current ? 'text-brand-800' : 'text-slate-800'}`}>
+                  <div className={`font-semibold ${current ? 'text-delivery-800' : 'text-slate-800'}`}>
                     {step.title}
                     {current && <span className="sr-only"> (current step)</span>}
                   </div>
@@ -388,7 +388,7 @@ export default function OrderTrack() {
         ) : (
           <div className="text-slate-500">No line items</div>
         )}
-        <div className="font-bold text-lg text-brand-900 pt-3 mt-3 border-t border-slate-200 tabular-nums">
+        <div className="font-bold text-lg text-delivery-900 pt-3 mt-3 border-t border-slate-200 tabular-nums">
           Total ₹{order.total ?? '—'}
         </div>
       </div>
@@ -397,7 +397,7 @@ export default function OrderTrack() {
         <p>
           <button
             type="button"
-            className="font-semibold text-brand-700 hover:text-brand-900 underline-offset-2 hover:underline"
+            className="font-bold text-delivery-700 hover:text-delivery-900 underline-offset-2 hover:underline"
             onClick={() => navigate('/track', { replace: true })}
           >
             Track a different order

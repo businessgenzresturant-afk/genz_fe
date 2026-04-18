@@ -261,14 +261,14 @@ export default function Dashboard() {
                   onClick={() => setStatusFilter(key)}
                   className={`inline-flex min-h-[36px] items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
                     active
-                      ? 'border-brand-600 bg-brand-50 text-brand-900 shadow-sm'
+                      ? 'border-delivery-600 bg-delivery-50 text-delivery-900 shadow-sm'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
                   }`}
                 >
                   {label}
                   <span
                     className={`tabular-nums rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${
-                      active ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600'
+                      active ? 'bg-delivery-600 text-white' : 'bg-slate-100 text-slate-600'
                     }`}
                   >
                     {count}
@@ -296,7 +296,7 @@ export default function Dashboard() {
                   setStatusFilter('all');
                   setOrderIdSearch('');
                 }}
-                className="mt-3 text-sm font-semibold text-brand-700 underline decoration-brand-400 underline-offset-2 hover:text-brand-800"
+                className="mt-3 text-sm font-semibold text-delivery-700 underline decoration-delivery-400 underline-offset-2 hover:text-delivery-800"
               >
                 Clear filters
               </button>
@@ -316,7 +316,7 @@ export default function Dashboard() {
               >
                 {/* TOP */}
                 <div className="flex justify-between items-center mb-3">
-                  <span className="font-semibold text-brand-700">
+                  <span className="font-semibold text-delivery-700">
                     #{order.orderNo}
                   </span>
 
@@ -332,7 +332,7 @@ export default function Dashboard() {
                   <span className="font-semibold text-slate-900">
                     ₹{order.total}
                   </span>
-                  <span className="text-brand-600">
+                  <span className="text-delivery-600">
                     {order.paymentMethod}
                   </span>
                 </div>

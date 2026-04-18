@@ -29,8 +29,8 @@ export default function Login() {
 
   return (
     <div className="page-fill min-h-[calc(100vh-4rem)] flex items-center justify-center p-4">
-      <div className="panel p-8 md:p-10 rounded-3xl max-w-md w-full border-brand-100 shadow-lift">
-        <p className="text-xs font-bold uppercase text-brand-700 tracking-[0.2em] text-center mb-2">
+      <div className="panel p-8 md:p-10 rounded-3xl max-w-md w-full border-delivery-100 shadow-lift">
+        <p className="text-xs font-bold uppercase text-delivery-700 tracking-[0.2em] text-center mb-2">
           Staff access
         </p>
         <h1 className="font-display text-3xl font-bold text-slate-900 text-center mb-8">

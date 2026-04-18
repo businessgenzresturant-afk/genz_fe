@@ -122,15 +122,15 @@ export default function Checkout() {
 
   return (
     <div className="page-fill p-4 max-w-3xl mx-auto pb-16">
-      <div className="panel p-6 md:p-8 mb-8">
-        <h1 className="font-display text-3xl font-bold text-slate-900 mb-1">Checkout</h1>
-        <p className="text-sm text-slate-600">Enter your details to place your order.</p>
+      <div className="panel p-6 md:p-8 mb-8 rounded-3xl">
+        <h1 className="font-display text-3xl font-bold text-ink mb-1">Checkout</h1>
+        <p className="text-sm text-ink-muted">Enter your details to place your order.</p>
       </div>
 
       {!cart.items.length && (
         <div className="panel p-6 mb-8 text-center text-slate-600 rounded-2xl">
           Your cart is empty.{' '}
-          <Link to="/menu" className="text-brand-700 font-semibold underline underline-offset-2">
+          <Link to="/menu" className="text-delivery-600 font-bold underline underline-offset-2 hover:text-delivery-700">
             Browse the menu
           </Link>
         </div>
@@ -168,13 +168,13 @@ export default function Checkout() {
             autoComplete="street-address"
           />
         </div>
-        <div className="flex gap-3 p-1.5 rounded-xl bg-slate-100/80 border border-slate-200">
+        <div className="flex gap-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80">
           <button
             type="button"
-            className={`flex-1 min-h-[44px] rounded-lg py-2.5 text-sm font-semibold transition-colors focus-ring ${
+            className={`flex-1 min-h-[44px] rounded-xl py-2.5 text-sm font-bold transition-colors focus-ring ${
               orderType === 'delivery'
-                ? 'bg-white text-brand-800 shadow-sm border border-brand-200'
-                : 'text-slate-600 hover:bg-white/70'
+                ? 'bg-white text-ink shadow-md border border-delivery-200'
+                : 'text-ink-muted hover:bg-white/70'
             }`}
             onClick={() => setOrderType('delivery')}
           >
@@ -182,10 +182,10 @@ export default function Checkout() {
           </button>
           <button
             type="button"
-            className={`flex-1 min-h-[44px] rounded-lg py-2.5 text-sm font-semibold transition-colors focus-ring ${
+            className={`flex-1 min-h-[44px] rounded-xl py-2.5 text-sm font-bold transition-colors focus-ring ${
               orderType === 'takeaway'
-                ? 'bg-white text-brand-800 shadow-sm border border-brand-200'
-                : 'text-slate-600 hover:bg-white/70'
+                ? 'bg-white text-ink shadow-md border border-delivery-200'
+                : 'text-ink-muted hover:bg-white/70'
             }`}
             onClick={() => setOrderType('takeaway')}
           >
@@ -207,7 +207,7 @@ export default function Checkout() {
           <span className="text-slate-600">{orderType === 'delivery' ? 'Delivery' : 'Pickup'}</span>
           <span className="tabular-nums">₹{delivery}</span>
         </div>
-        <div className="flex justify-between font-bold text-lg text-brand-800 pt-3 mt-2 border-t border-slate-200">
+        <div className="flex justify-between font-bold text-lg text-delivery-800 pt-3 mt-2 border-t border-slate-200">
           <span>Total</span>
           <span className="tabular-nums">₹{grandTotal}</span>
         </div>
@@ -229,7 +229,7 @@ export default function Checkout() {
           <input
             type="radio"
             name="pay"
-            className="w-4 h-4 text-brand-600 border-slate-300 focus:ring-brand-500"
+            className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
             checked={payment === 'UPI'}
             onChange={() => setPayment('UPI')}
           />
@@ -239,7 +239,7 @@ export default function Checkout() {
           <input
             type="radio"
             name="pay"
-            className="w-4 h-4 text-brand-600 border-slate-300 focus:ring-brand-500"
+            className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
             checked={payment === 'COD'}
             onChange={() => setPayment('COD')}
           />

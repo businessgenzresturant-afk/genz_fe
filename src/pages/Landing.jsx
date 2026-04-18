@@ -39,47 +39,51 @@ function IconPulse({ className }) {
 
 function DashboardPreview() {
   const rows = [
-    { id: '#1042', items: 'Veg noodles · Full', status: 'Cooking', tone: 'bg-amber-100 text-amber-800' },
-    { id: '#1041', items: 'Paneer tikka · Half', status: 'Ready', tone: 'bg-emerald-100 text-emerald-800' },
-    { id: '#1040', items: 'Momo platter · Full', status: 'New', tone: 'bg-slate-100 text-slate-700' },
+    { id: '#1042', items: 'Veg noodles · Full', status: 'Cooking', tone: 'bg-amber-100/20 text-amber-300 border-amber-500/30' },
+    { id: '#1041', items: 'Paneer tikka · Half', status: 'Ready', tone: 'bg-brand-500/20 text-brand-300 border-brand-500/30' },
+    { id: '#1040', items: 'Momo platter · Full', status: 'New', tone: 'bg-white/10 text-white border-white/20' },
   ];
   return (
-    <div className="overflow-hidden rounded-[12px] border border-slate-200/90 bg-white shadow-[0_8px_32px_-12px_rgba(15,23,42,0.14)] ring-1 ring-slate-900/[0.04] transition hover:shadow-[0_12px_40px_-14px_rgba(15,23,42,0.16)] xl:rounded-[14px] xl:shadow-[0_16px_48px_-20px_rgba(15,23,42,0.18)]">
-      <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-3 py-2 xl:px-4 xl:py-2.5">
-        <span className="size-2 rounded-full bg-[#ff5f57]" aria-hidden />
-        <span className="size-2 rounded-full bg-[#febc2e]" aria-hidden />
-        <span className="size-2 rounded-full bg-[#28c840]" aria-hidden />
-        <span className="text-[11px] xl:text-xs font-medium text-slate-500 ml-2 tabular-nums">genz — orders</span>
+    <div className="overflow-hidden rounded-[16px] border border-white/10 bg-white/5 backdrop-blur-md shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-1 ring-white/5 transition hover:shadow-[0_20px_60px_rgba(0,0,0,0.4)]">
+      <div className="flex items-center gap-2 border-b border-white/10 bg-white/5 px-3 py-2.5">
+        <span className="size-2.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]" aria-hidden />
+        <span className="size-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]" aria-hidden />
+        <span className="size-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" aria-hidden />
+        <span className="text-xs font-semibold text-slate-400 ml-2 tracking-wider uppercase">Live Dashboard</span>
       </div>
-      <div className="border-b border-slate-100 px-3 py-2 xl:px-4 flex items-center justify-between gap-2 bg-white">
-        <span className="text-xs xl:text-sm font-semibold text-slate-900">Live queue</span>
-        <span className="text-[10px] font-medium uppercase tracking-wide text-emerald-600">● syncing</span>
+      <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between gap-2 bg-white/5">
+        <span className="text-sm font-bold text-white">Live queue</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest text-brand-400 flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+          </span>
+          syncing
+        </span>
       </div>
-      <div className="p-2.5 xl:p-3.5 space-y-1.5 xl:space-y-2 bg-white">
+      <div className="p-3.5 space-y-2.5 bg-transparent">
         {rows.map((row) => (
           <div
             key={row.id}
-            className="flex items-center justify-between gap-2 rounded-[8px] border border-slate-100 bg-slate-50/50 px-2.5 py-2 xl:px-3 xl:py-2.5"
+            className="flex items-center justify-between gap-3 rounded-xl border border-white/10 bg-white/5 px-3 py-3 transition hover:bg-white/10"
           >
             <div className="min-w-0">
-              <p className="text-[11px] xl:text-xs font-semibold text-slate-900 tabular-nums">{row.id}</p>
-              <p className="text-[10px] xl:text-[11px] text-slate-500 truncate">{row.items}</p>
+              <p className="text-xs font-bold text-white tracking-wide">{row.id}</p>
+              <p className="text-[11px] text-slate-300 truncate mt-0.5">{row.items}</p>
             </div>
-            <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] xl:text-[11px] font-semibold ${row.tone}`}>{row.status}</span>
+            <span className={`shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold uppercase tracking-wider ${row.tone}`}>{row.status}</span>
           </div>
         ))}
       </div>
-      <div className="border-t border-slate-100 px-3 py-2 xl:px-4 xl:py-2.5 flex items-center justify-between text-[10px] xl:text-xs text-slate-500 bg-slate-50/50">
-        <span>Today · 24 orders</span>
-        <span className="text-brand-700 font-medium">Avg. prep 12m</span>
+      <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between text-xs text-slate-400 bg-white/5 backdrop-blur-sm">
+        <span className="font-medium">Today · 24 orders</span>
+        <span className="text-brand-400 font-bold">Avg. prep 12m</span>
       </div>
     </div>
   );
 }
 
-/** Fluid column: grows on large / ultra-wide (≤1680px, ~94vw) — minimal empty gutters */
-const shell =
-  'mx-auto w-full max-w-[min(1680px,94vw)] px-4 sm:px-5 md:px-6 lg:px-7 xl:px-8 2xl:px-10';
+const shell = 'mx-auto w-full max-w-[min(1680px,94vw)] px-4 sm:px-5 md:px-6 lg:px-7 xl:px-8 2xl:px-10';
 
 function MenuPreviewMini() {
   const dishes = [
@@ -87,39 +91,24 @@ function MenuPreviewMini() {
     { name: 'Paneer tikka', cat: 'Tandoor', half: 140, full: 260 },
   ];
   return (
-    <div className="mt-3 rounded-[12px] border border-slate-200/90 bg-white/95 p-3 xl:p-4 shadow-[0_4px_24px_-8px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/[0.04] backdrop-blur-sm xl:rounded-[14px]">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Menu · guest</p>
-        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
+    <div className="mt-4 rounded-[16px] border border-white/10 bg-white/5 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-md">
+      <div className="mb-3 flex items-center justify-between">
+        <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Menu Preview</p>
+        <span className="rounded-full bg-brand-500/20 px-2.5 py-1 text-[10px] font-bold text-brand-300 border border-brand-500/30">
           Live
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-2 xl:gap-3">
+      <div className="grid grid-cols-2 gap-3">
         {dishes.map((row) => (
           <div
             key={row.name}
-            className="group flex flex-col overflow-hidden rounded-[10px] border border-slate-100 bg-slate-50/80 shadow-sm ring-1 ring-slate-900/[0.03] transition hover:border-brand-200/60 hover:shadow-md xl:rounded-[12px]"
+            className="group flex flex-col rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-500/50 hover:bg-white/10 p-3"
           >
-            <DishNameBackdrop name={row.name} variant="compact" />
-            <div className="p-2 xl:p-2.5">
-              <p className="text-[10px] font-semibold leading-tight text-slate-900 line-clamp-2">{row.name}</p>
-              <p className="mt-0.5 text-[9px] font-medium uppercase tracking-wide text-slate-400">{row.cat}</p>
-              <div className="mt-1.5 flex justify-between gap-1 text-[9px] tabular-nums text-slate-600">
-                <span>
-                  <span className="text-slate-400">H</span> ₹{row.half}
-                </span>
-                <span>
-                  <span className="text-slate-400">F</span> ₹{row.full}
-                </span>
-              </div>
-              <div className="mt-2 grid grid-cols-2 gap-1">
-                <span className="rounded-[6px] border border-slate-200 bg-white py-1 text-center text-[9px] font-semibold text-slate-500">
-                  Half
-                </span>
-                <span className="rounded-[6px] bg-gradient-to-r from-brand-600 to-emerald-600 py-1 text-center text-[9px] font-semibold text-white">
-                  Full
-                </span>
-              </div>
+            <p className="text-sm font-bold text-white truncate">{row.name}</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mt-1">{row.cat}</p>
+            <div className="mt-3 flex justify-between gap-1 text-xs text-slate-300">
+              <span className="font-medium"><span className="text-slate-500">H</span> ₹{row.half}</span>
+              <span className="font-bold text-brand-400"><span className="text-slate-500">F</span> ₹{row.full}</span>
             </div>
           </div>
         ))}
@@ -132,186 +121,184 @@ export default function Landing() {
   const { isAdmin } = useAuth();
 
   return (
-    <div className="home-fill w-full overflow-x-hidden text-slate-800">
-      <main className="flex w-full min-w-0 flex-1 flex-col">
-      {/* Hero — split + glow — page backdrop comes from index.css body::before */}
-      <section className="relative overflow-hidden border-b border-slate-200/70 bg-gradient-to-b from-white/80 via-slate-50/85 to-slate-100/88 backdrop-blur-[2px]">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_85%_60%_at_90%_15%,rgba(13,148,136,0.11),transparent_58%)]"
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_55%_45%_at_10%_80%,rgba(59,130,246,0.06),transparent_55%)]"
-          aria-hidden
-        />
-        <div className={`${shell} relative py-6 md:py-8 xl:py-10 2xl:py-12`}>
-          <div className="grid grid-cols-12 gap-x-4 gap-y-6 md:gap-x-6 md:gap-y-8 xl:gap-x-10 xl:gap-y-10 2xl:gap-x-12 items-start">
-            <div className="col-span-12 lg:col-span-5 xl:col-span-5 flex flex-col justify-center">
-              <p className="text-[11px] xl:text-xs 2xl:text-sm font-semibold uppercase tracking-[0.12em] text-brand-600 mb-2">
-                Restaurant OS
-              </p>
-              <h1 className="font-sans text-[1.85rem] sm:text-[2.25rem] lg:text-[2.65rem] xl:text-[2.95rem] 2xl:text-[3.45rem] font-semibold tracking-[-0.035em] text-slate-950 leading-[1.08]">
-                Ordering &amp; kitchen ops,
-                <span className="text-brand-700"> one flow.</span>
-              </h1>
-              <p className="mt-3 md:mt-4 text-sm md:text-base xl:text-lg 2xl:text-xl text-slate-600 leading-snug max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
-                Digital menu, cart, checkout, and live order status — tuned for guests on mobile and owners on the
-                dashboard.
-              </p>
-              <div className="mt-5 md:mt-6 flex flex-wrap items-center gap-3">
-                <a
-                  href="/menu"
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-slate-900 px-5 py-2.5 text-sm xl:text-base 2xl:text-lg font-semibold text-white shadow-sm transition hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 2xl:px-6 2xl:py-3"
-                >
-                  View menu
-                </a>
-                {isAdmin ? (
-                  <a
-                    href="/admin/dashboard"
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] border border-slate-200 bg-white px-5 py-2.5 text-sm xl:text-base 2xl:text-lg font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 2xl:px-6 2xl:py-3"
-                  >
-                    Dashboard
-                  </a>
-                ) : (
-                  <a
-                    href="/checkout"
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] border border-slate-200 bg-white px-5 py-2.5 text-sm xl:text-base 2xl:text-lg font-semibold text-slate-800 shadow-sm hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 focus-visible:ring-offset-2 2xl:px-6 2xl:py-3"
-                  >
-                    Checkout
-                  </a>
-                )}
-              </div>
-              <dl className="mt-6 grid grid-cols-3 gap-4 md:gap-6 max-w-lg xl:max-w-2xl border-t border-slate-200/80 pt-5">
-                <div>
-                  <dt className="text-[10px] xl:text-[11px] 2xl:text-xs font-medium uppercase tracking-wide text-slate-400">Portions</dt>
-                  <dd className="mt-0.5 text-sm xl:text-base 2xl:text-lg font-semibold text-slate-900">Half / full</dd>
-                </div>
-                <div>
-                  <dt className="text-[10px] xl:text-[11px] 2xl:text-xs font-medium uppercase tracking-wide text-slate-400">Tracking</dt>
-                  <dd className="mt-0.5 text-sm xl:text-base 2xl:text-lg font-semibold text-slate-900">Live status</dd>
-                </div>
-                <div>
-                  <dt className="text-[10px] xl:text-[11px] 2xl:text-xs font-medium uppercase tracking-wide text-slate-400">Owners</dt>
-                  <dd className="mt-0.5 text-sm xl:text-base 2xl:text-lg font-semibold text-slate-900">Real-time</dd>
-                </div>
-              </dl>
-            </div>
-            <div className="col-span-12 lg:col-span-7 xl:col-span-7 lg:pl-2 xl:pl-4">
-              <DashboardPreview />
-              <MenuPreviewMini />
-              <p className="mt-2 text-[11px] text-slate-400 text-center lg:text-left">
-                Product previews — dashboard &amp; menu
-              </p>
-            </div>
-          </div>
+    <div className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen flex flex-col selection:bg-brand-200 selection:text-brand-900">
+      {/* Antigravity Global Background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-brand-100/40 blur-3xl opacity-60" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-orange-100/40 blur-3xl opacity-60" />
+        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-blue-100/40 blur-3xl opacity-60" />
+      </div>
 
-          {/* Numbered value strip — bottom of hero (same max-width as grid above) */}
-          <div className="mt-8 w-full border-t border-slate-200/70 pt-6 md:mt-10 md:pt-7">
-            <div className="grid grid-cols-12 gap-3 md:gap-4 xl:gap-5 text-sm md:text-base xl:text-lg">
-              <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex gap-3 rounded-[8px] border border-slate-200/80 bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-                <span className="text-brand-600 font-semibold tabular-nums">01</span>
-                <span className="text-slate-600 leading-snug">Mobile-first layout for ordering on the go.</span>
-              </div>
-              <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex gap-3 rounded-[8px] border border-slate-200/80 bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-                <span className="text-brand-600 font-semibold tabular-nums">02</span>
-                <span className="text-slate-600 leading-snug">Owner tools for menu and order control.</span>
-              </div>
-              <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex gap-3 rounded-[8px] border border-slate-200/80 bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-                <span className="text-brand-600 font-semibold tabular-nums">03</span>
-                <span className="text-slate-600 leading-snug">Transparent pricing — half &amp; full on every dish.</span>
-              </div>
-              <div className="col-span-12 sm:col-span-6 lg:col-span-3 flex gap-3 rounded-[8px] border border-slate-200/80 bg-white/70 px-3 py-2.5 shadow-sm backdrop-blur-sm">
-                <span className="text-brand-600 font-semibold tabular-nums">04</span>
-                <span className="text-slate-600 leading-snug">Status updates from kitchen to doorstep.</span>
+      <main className="flex w-full flex-1 flex-col relative z-10">
+        <div className={`${shell} pt-8 md:pt-12 pb-16 space-y-12`}>
+          
+          {/* FLOATING ISLAND HERO */}
+          <section className="animate-float-up opacity-0 delay-100 relative">
+            <div className="relative overflow-hidden rounded-[40px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(20,184,166,0.2)] border border-white/10 transition-transform duration-500">
+              
+              {/* Island internal glows */}
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+              <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-[70%] h-[70%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(20,184,166,0.15),transparent_50%)] pointer-events-none" />
+              
+              <div className="relative p-8 sm:p-10 md:p-16 lg:p-20">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+                  
+                  {/* Hero Content */}
+                  <div className="lg:col-span-6 flex flex-col justify-center">
+                    <p className="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-brand-400 mb-4 inline-flex items-center gap-2">
+                      <span className="h-px w-8 bg-brand-400/50"></span>
+                      Food delivery · Gen-Z
+                    </p>
+                    <h1 className="font-sans text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight leading-[1.05] text-white">
+                      Crave it.<br />Order it.
+                      <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-300 mt-2"> Track it live.</span>
+                    </h1>
+                    <p className="mt-6 text-base md:text-lg lg:text-xl text-slate-300 leading-relaxed max-w-2xl font-medium">
+                      Browse the menu like your favourite delivery app — cart, checkout, and live order status in one smooth, antigravity flow.
+                    </p>
+                    <div className="mt-8 flex flex-wrap items-center gap-4">
+                      <a
+                        href="/menu"
+                        className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-500 px-8 text-base md:text-lg font-bold text-white shadow-[0_10px_25px_rgba(20,184,166,0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_15px_35px_rgba(20,184,166,0.5)] focus:outline-none focus:ring-2 focus:ring-brand-400"
+                      >
+                        Order food online
+                      </a>
+                      {isAdmin ? (
+                        <a
+                          href="/admin/dashboard"
+                          className="inline-flex h-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-8 text-base md:text-lg font-bold text-white transition-all hover:bg-white/20 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        >
+                          Dashboard
+                        </a>
+                      ) : (
+                        <a
+                          href="/checkout"
+                          className="inline-flex h-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-8 text-base md:text-lg font-bold text-white transition-all hover:bg-white/20 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
+                        >
+                          Go to checkout
+                        </a>
+                      )}
+                    </div>
+                    
+                    <div className="mt-12 grid grid-cols-3 gap-6 pt-8 border-t border-white/10">
+                      <div>
+                        <p className="text-3xl font-black text-white">100%</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Live Status</p>
+                      </div>
+                      <div>
+                        <p className="text-3xl font-black text-brand-400">24/7</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Ordering</p>
+                      </div>
+                      <div>
+                        <p className="text-3xl font-black text-white">All</p>
+                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Portions</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Hero Previews */}
+                  <div className="lg:col-span-6 relative">
+                    <div className="absolute inset-0 bg-brand-500/20 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="relative transform lg:translate-x-4 xl:translate-x-8">
+                      <DashboardPreview />
+                      <MenuPreviewMini />
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
 
-      {/* Feature cards — capped width so cards don’t stretch on ultra-wide */}
-      <section className="relative border-b border-slate-200/80 bg-white/92 backdrop-blur-[1px]">
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_35%_at_50%_0%,rgba(13,148,136,0.05),transparent_60%)]"
-          aria-hidden
-        />
-        <div className={`${shell} relative py-6 xl:py-7 2xl:py-9`}>
-          <div className="mb-4 max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
-            <h2 className="font-sans text-lg md:text-xl xl:text-2xl 2xl:text-3xl font-semibold tracking-tight text-slate-950">
-              Built for speed and clarity
-            </h2>
-            <p className="mt-1.5 text-sm md:text-base xl:text-lg 2xl:text-xl text-slate-600 leading-snug">
-              Guest checkout, scannable menu, kitchen visibility — minimal chrome.
-            </p>
-          </div>
-          <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6">
-            <article className="group flex h-full flex-col rounded-[12px] border border-slate-200/90 bg-white p-5 shadow-card transition duration-200 hover:-translate-y-1 hover:border-brand-200/70 hover:shadow-[0_12px_40px_-16px_rgba(15,23,42,0.14)] xl:p-6 2xl:p-7">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-brand-600 text-white shadow-sm xl:h-10 xl:w-10 2xl:h-11 2xl:w-11">
-                <IconSteps className="h-4 w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" />
-              </div>
-              <h3 className="mt-4 font-sans text-base xl:text-lg 2xl:text-xl font-semibold text-slate-900">Curated flow</h3>
-              <p className="mt-2 flex-1 text-sm xl:text-base 2xl:text-lg text-slate-600 leading-snug">
-                Steps and forms stay obvious — fewer drop-offs from cart to confirmation.
+          {/* VALUE STRIP */}
+          <section className="animate-float-up opacity-0 delay-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[
+                { num: '01', text: 'Mobile-first layout for ordering on the go.' },
+                { num: '02', text: 'Owner tools for menu and order control.' },
+                { num: '03', text: 'Transparent pricing — half & full portions.' },
+                { num: '04', text: 'Live status updates from kitchen to doorstep.' }
+              ].map((item, idx) => (
+                <div key={idx} className="flex gap-4 rounded-2xl border border-white/20 bg-white/70 backdrop-blur-md px-5 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-transform hover:-translate-y-2">
+                  <span className="text-brand-500 font-black text-xl tabular-nums leading-none">{item.num}</span>
+                  <span className="text-slate-700 font-semibold text-sm leading-snug">{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* FEATURE CARDS */}
+          <section className="animate-float-up opacity-0 delay-300">
+            <div className="mb-8 max-w-3xl">
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">
+                Everything you expect from a delivery experience
+              </h2>
+              <p className="mt-3 text-lg md:text-xl text-slate-500 font-medium">
+                Fast menu browsing, simple checkout, and live tracking — without the clutter.
               </p>
-            </article>
-            <article className="group flex h-full flex-col rounded-[12px] border border-slate-200/90 bg-white p-5 shadow-card transition duration-200 hover:-translate-y-1 hover:border-amber-200/80 hover:shadow-[0_12px_40px_-16px_rgba(15,23,42,0.14)] xl:p-6 2xl:p-7">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-amber-100 text-amber-900 shadow-sm xl:h-10 xl:w-10 2xl:h-11 2xl:w-11">
-                <IconChef className="h-4 w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" />
-              </div>
-              <h3 className="mt-4 font-sans text-base xl:text-lg 2xl:text-xl font-semibold text-slate-900">Menu structure</h3>
-              <p className="mt-2 flex-1 text-sm xl:text-base 2xl:text-lg text-slate-600 leading-snug">
-                Categories and pricing stay scannable; half/full portions on every line.
-              </p>
-            </article>
-            <article className="group flex h-full flex-col rounded-[12px] border border-slate-200/90 bg-white p-5 shadow-card transition duration-200 hover:-translate-y-1 hover:border-emerald-200/80 hover:shadow-[0_12px_40px_-16px_rgba(15,23,42,0.14)] sm:col-span-2 lg:col-span-1 xl:p-6 2xl:p-7">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-emerald-100 text-emerald-900 shadow-sm xl:h-10 xl:w-10 2xl:h-11 2xl:w-11">
-                <IconPulse className="h-4 w-4 xl:h-5 xl:w-5 2xl:h-6 2xl:w-6" />
-              </div>
-              <h3 className="mt-4 font-sans text-base xl:text-lg 2xl:text-xl font-semibold text-slate-900">Live kitchen</h3>
-              <p className="mt-2 flex-1 text-sm xl:text-base 2xl:text-lg text-slate-600 leading-snug">
-                Guests track orders; owners see the queue update as tickets move.
-              </p>
-            </article>
-          </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { icon: IconSteps, title: 'Curated flow', desc: 'Steps and forms stay obvious — fewer drop-offs from cart to confirmation.', color: 'from-brand-500 to-emerald-400', text: 'text-white' },
+                { icon: IconChef, title: 'Menu structure', desc: 'Categories and pricing stay scannable; half/full portions on every line.', color: 'from-amber-400 to-orange-400', text: 'text-white' },
+                { icon: IconPulse, title: 'Live kitchen', desc: 'Guests track orders; owners see the queue update as tickets move.', color: 'from-blue-500 to-indigo-500', text: 'text-white' }
+              ].map((card, idx) => (
+                <article key={idx} className="group flex flex-col rounded-[24px] border border-white/20 bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)]">
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${card.color} ${card.text} shadow-lg mb-6 transition-transform group-hover:scale-110`}>
+                    <card.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900">{card.title}</h3>
+                  <p className="mt-3 flex-1 text-base text-slate-600 font-medium leading-relaxed">
+                    {card.desc}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+
         </div>
-      </section>
       </main>
 
-      {/* Sticky to bottom of viewport when content is short (flex parent from App) */}
-      <footer className="mt-auto w-full shrink-0 border-t border-slate-800 bg-gradient-to-b from-slate-950 to-slate-900 text-slate-100">
-        <div className={`${shell} py-5 md:py-6 xl:py-7 2xl:py-8`}>
-          <div className="grid grid-cols-12 gap-5 xl:gap-8 2xl:gap-10 items-center">
-            <div className="col-span-12 lg:col-span-8">
-              <p className="text-[11px] xl:text-xs 2xl:text-sm font-semibold uppercase tracking-[0.1em] text-slate-400">
-                {isAdmin ? 'Owner' : 'Get started'}
+      {/* GLASSMORPHIC FOOTER */}
+      <footer className="mt-auto w-full shrink-0 border-t border-white/10 bg-slate-900/95 backdrop-blur-xl text-white">
+        <div className={`${shell} py-10 md:py-16 relative overflow-hidden`}>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(20,184,166,0.1),transparent_50%)] pointer-events-none" />
+          
+          <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="lg:col-span-8">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-400 mb-2">
+                {isAdmin ? 'Owner Access' : 'Get started'}
               </p>
-              <h2 className="mt-1 font-sans text-xl md:text-2xl xl:text-3xl 2xl:text-4xl font-semibold text-white tracking-tight">
-                {isAdmin ? 'Manage menu & incoming orders' : 'Order your next meal in minutes'}
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight">
+                {isAdmin ? 'Manage your menu & live queue' : 'Order your next meal in minutes'}
               </h2>
-              <p className="mt-2 text-sm md:text-base xl:text-lg 2xl:text-xl text-slate-400 leading-snug max-w-xl xl:max-w-2xl 2xl:max-w-3xl">
+              <p className="mt-4 text-lg text-slate-400 max-w-2xl font-medium leading-relaxed">
                 {isAdmin
-                  ? 'Edit dishes on Manage menu; handle the live queue on Dashboard.'
-                  : 'Browse the menu, build a cart, and track delivery — one account flow.'}
+                  ? 'Edit dishes on Manage menu; handle the incoming orders seamlessly on the Dashboard.'
+                  : 'Browse the menu, build a cart, and track delivery — all in one smooth, antigravity flow.'}
               </p>
             </div>
-            <div className="col-span-12 lg:col-span-4 flex flex-wrap gap-2 lg:justify-end">
+            
+            <div className="lg:col-span-4 flex flex-col sm:flex-row gap-4 lg:justify-end">
               <a
                 href={isAdmin ? '/admin/menu' : '/menu'}
-                className="inline-flex items-center justify-center rounded-[10px] bg-white px-4 py-2 text-sm xl:text-base 2xl:text-lg font-semibold text-slate-900 shadow-sm hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 2xl:px-5 2xl:py-2.5"
+                className="inline-flex h-12 sm:h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-500 px-6 sm:px-8 text-base font-bold text-white shadow-[0_10px_25px_rgba(20,184,166,0.3)] transition-all hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-brand-400"
               >
                 {isAdmin ? 'Manage menu' : 'Explore menu'}
               </a>
               {isAdmin ? (
                 <a
                   href="/admin/dashboard"
-                  className="inline-flex items-center justify-center rounded-[10px] border border-slate-600 bg-transparent px-4 py-2 text-sm xl:text-base 2xl:text-lg font-semibold text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 2xl:px-5 2xl:py-2.5"
+                  className="inline-flex h-12 sm:h-14 items-center justify-center rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md px-6 sm:px-8 text-base font-bold text-white transition-all hover:bg-white/10 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 >
                   Dashboard
                 </a>
               ) : (
                 <Link
                   to="/admin/login"
-                  className="inline-flex items-center justify-center rounded-[10px] border border-slate-600 bg-transparent px-4 py-2 text-sm xl:text-base 2xl:text-lg font-semibold text-white hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 2xl:px-5 2xl:py-2.5"
+                  className="inline-flex h-12 sm:h-14 items-center justify-center rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md px-6 sm:px-8 text-base font-bold text-white transition-all hover:bg-white/10 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 >
                   Owner login
                 </Link>

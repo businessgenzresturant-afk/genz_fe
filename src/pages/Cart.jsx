@@ -10,16 +10,16 @@ export default function Cart() {
 
   return (
     <div className="page-fill p-4 max-w-3xl mx-auto pb-16">
-      <div className="panel p-6 md:p-8 mb-8">
-        <h1 className="font-display text-3xl font-bold text-slate-900 mb-1">Your cart</h1>
-        <p className="text-sm text-slate-600">Review items before you check out.</p>
+      <div className="panel p-6 md:p-8 mb-8 rounded-3xl border-slate-100">
+        <h1 className="font-display text-3xl font-bold text-ink mb-1">Your cart</h1>
+        <p className="text-sm text-ink-muted">Review items before you check out.</p>
       </div>
 
       <div className="space-y-4 mb-10">
         {cart.items.length === 0 && (
           <div className="panel p-12 text-center text-slate-600 rounded-2xl border-dashed border-2 border-slate-200">
             Your cart is empty.{' '}
-            <Link to="/menu" className="text-brand-700 font-semibold underline decoration-brand-400 underline-offset-2 hover:text-brand-800">
+            <Link to="/menu" className="text-delivery-600 font-bold underline decoration-delivery-300 underline-offset-2 hover:text-delivery-700">
               Browse the menu
             </Link>
           </div>
@@ -29,20 +29,20 @@ export default function Cart() {
             key={`${line._id}-${line.size}`}
             className="panel p-4 flex items-center gap-4 border-slate-100"
           >
-            <div className="w-16 h-16 shrink-0 rounded-xl bg-gradient-to-br from-brand-100 to-emerald-50 border border-brand-100" />
+            <div className="w-16 h-16 shrink-0 rounded-2xl bg-gradient-to-br from-delivery-100 to-orange-50 border border-delivery-100/80" />
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-slate-900">
+              <h3 className="font-bold text-ink">
                 {line.name}{' '}
-                <span className="text-slate-500 font-normal">({line.size})</span>
+                <span className="text-ink-muted font-semibold">({line.size})</span>
               </h3>
-              <div className="text-brand-700 font-bold tabular-nums">
+              <div className="text-delivery-700 font-bold tabular-nums">
                 ₹{(line.size === 'half' ? line.halfPrice : line.fullPrice) * line.quantity}
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <button
                 type="button"
-                className="w-9 h-9 rounded-lg border-2 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 focus-ring"
+                className="w-9 h-9 rounded-xl border-2 border-slate-200 text-ink font-bold hover:bg-delivery-50 hover:border-delivery-200 focus-ring"
                 aria-label="Decrease quantity"
                 onClick={() => dispatch({
                   type: 'UPDATE_QUANTITY',
@@ -54,7 +54,7 @@ export default function Cart() {
               <span className="w-8 text-center font-semibold tabular-nums">{line.quantity}</span>
               <button
                 type="button"
-                className="w-9 h-9 rounded-lg border-2 border-slate-200 text-slate-700 font-bold hover:bg-slate-50 focus-ring"
+                className="w-9 h-9 rounded-xl border-2 border-slate-200 text-ink font-bold hover:bg-delivery-50 hover:border-delivery-200 focus-ring"
                 aria-label="Increase quantity"
                 onClick={() => dispatch({
                   type: 'UPDATE_QUANTITY',
@@ -83,9 +83,9 @@ export default function Cart() {
               <span className="text-slate-600">Delivery</span>
               <span className="tabular-nums">₹{delivery}</span>
             </div>
-            <div className="flex justify-between text-xl font-bold text-slate-900 pt-4 border-t border-slate-200">
+            <div className="flex justify-between text-xl font-bold text-ink pt-4 border-t border-slate-200">
               <span>Grand total</span>
-              <span className="tabular-nums text-brand-800">₹{grandTotal}</span>
+              <span className="tabular-nums text-delivery-700">₹{grandTotal}</span>
             </div>
           </div>
           <Link

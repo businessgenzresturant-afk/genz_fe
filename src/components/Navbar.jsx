@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import fallbackNav from '../assets/fallbackNav.json';
 
 function IconMenu({ className }) {
@@ -19,8 +20,16 @@ function IconClose({ className }) {
   );
 }
 
+function IconCartLine({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h15l-1.5 9h-12L6 6zM6 6L5 3H2M9 20a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
+    </svg>
+  );
+}
+
 const defaultLinks = [
-  { to: '/', label: 'Home' },
+  { to: '/home', label: 'Home' },
   { to: '/menu', label: 'Menu' },
   { to: '/cart', label: 'Cart' },
   { to: '/checkout', label: 'Checkout' },
@@ -28,7 +37,7 @@ const defaultLinks = [
 ];
 
 const ownerDefaultLinks = [
-  { to: '/', label: 'Home' },
+  { to: '/home', label: 'Home' },
   { to: '/menu', label: 'Menu' },
   { to: '/admin/menu', label: 'Manage menu' },
   { to: '/track', label: 'Track' },
@@ -44,6 +53,9 @@ function normalizeNavLinks(rawLinks, isAdmin) {
 export default function Navbar() {
   const location = useLocation();
   const { token, isAdmin, logout } = useAuth();
+  const { cart } = useCart();
+  const cartCount = cart.items.reduce((s, i) => s + i.quantity, 0);
+  const isMenuHome = location.pathname === '/' || location.pathname === '/menu';
   const [links, setLinks] = useState(defaultLinks);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -92,29 +104,62 @@ export default function Navbar() {
   }, [mobileOpen]);
 
   const linkClass = (isActive) =>
-    `inline-flex min-h-[44px] md:min-h-[36px] items-center rounded-[8px] px-3 py-2 md:px-2.5 md:py-1.5 text-sm md:text-sm xl:text-[15px] 2xl:text-base font-medium transition-colors focus-ring ${
+    `inline-flex min-h-[44px] md:min-h-[36px] items-center rounded-full px-3.5 py-2 md:px-3 md:py-1.5 text-sm md:text-sm xl:text-[15px] 2xl:text-base font-semibold transition-colors focus-ring ${
       isActive
-        ? 'bg-slate-900 text-white shadow-sm'
-        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+        ? 'bg-delivery-500 text-white shadow-md'
+        : 'text-ink-muted hover:bg-slate-100 hover:text-ink'
     }`;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-slate-200/90 bg-white/95 shadow-food backdrop-blur-md">
       <div className="relative mx-auto w-full max-w-[1600px] px-4 py-3 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16 2xl:py-4">
         <div className="flex items-center justify-between gap-3">
           <Link
             to="/"
-            className="group flex min-h-[48px] items-baseline gap-1 font-display text-lg sm:text-xl md:text-2xl xl:text-3xl 2xl:text-4xl font-semibold tracking-tight text-slate-900"
+            className={`group flex min-h-[48px] items-center gap-2 sm:gap-2.5 focus-ring rounded-xl ${
+              isMenuHome ? 'md:gap-3' : ''
+            }`}
           >
-            <span>GEN</span>
-            <span className="text-brand-600 group-hover:text-brand-700 transition-colors">-Z</span>
-            <span className="font-sans text-xs sm:text-sm xl:text-base 2xl:text-lg font-medium text-slate-500 ml-0.5">
-              Restaurant
+            <img
+              src="/genz-logo.png"
+              alt=""
+              width={140}
+              height={48}
+              className="h-9 w-auto sm:h-10 md:h-11 xl:h-12 object-contain object-left shrink-0"
+              decoding="async"
+            />
+            <span className="sr-only">GEN-Z Restaurant</span>
+            <span
+              className={`font-menu ${
+                isMenuHome
+                  ? 'inline max-w-[min(200px,46vw)] truncate text-sm font-extrabold tracking-tight text-electric-800 sm:max-w-none sm:text-base'
+                  : 'font-sans max-[380px]:hidden text-xs sm:inline sm:text-sm xl:text-base 2xl:text-lg font-medium text-ink-muted'
+              }`}
+            >
+              {isMenuHome ? 'GEN-Z Restaurant' : 'Restaurant'}
             </span>
           </Link>
+          {isMenuHome && !isAdmin ? (
+            <div className="flex md:hidden items-center gap-1">
+              <Link
+                to="/cart"
+                className="relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl text-electric-800 focus-ring"
+                aria-label={`Cart${cartCount ? `, ${cartCount} items` : ''}`}
+              >
+                <IconCartLine className="h-7 w-7" />
+                {cartCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-neon px-1 text-[10px] font-extrabold leading-none text-charcoal-900">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
+              </Link>
+            </div>
+          ) : null}
           <button
             type="button"
-            className="inline-flex md:hidden min-h-[44px] min-w-[44px] items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-800 shadow-sm focus-ring"
+            className={`inline-flex md:hidden min-h-[44px] min-w-[44px] items-center justify-center rounded-[10px] border border-slate-200 bg-white text-slate-800 shadow-sm focus-ring ${
+              isMenuHome && !isAdmin ? 'hidden' : ''
+            }`}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
             onClick={() => setMobileOpen((o) => !o)}

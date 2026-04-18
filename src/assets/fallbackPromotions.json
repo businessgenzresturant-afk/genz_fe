@@ -1,0 +1,18 @@
+[
+  {
+    "_id": "demo-offer-1",
+    "title": "Weekend combo",
+    "subtitle": "Any two mains + beverage",
+    "description": "Friday–Sunday. Discount applied at checkout.",
+    "active": true,
+    "sortOrder": 0
+  },
+  {
+    "_id": "demo-offer-2",
+    "title": "Free delivery",
+    "subtitle": "On orders above ₹499",
+    "description": "Within Zone 1 when eligible.",
+    "active": true,
+    "sortOrder": 1
+  }
+]

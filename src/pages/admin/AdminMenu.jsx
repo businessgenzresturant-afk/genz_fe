@@ -21,6 +21,33 @@ export default function AdminMenu() {
   const [addStatus, setAddStatus] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [nameSearch, setNameSearch] = useState('');
+  const [offers, setOffers] = useState([]);
+  const [offerForm, setOfferForm] = useState({
+    title: '',
+    subtitle: '',
+    description: '',
+    active: true,
+    sortOrder: 0,
+  });
+  const [offerStatus, setOfferStatus] = useState('');
+  const [busyOfferId, setBusyOfferId] = useState(null);
+
+  const loadOffers = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/offers/admin', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && Array.isArray(data.offers)) {
+        setOffers(data.offers);
+      } else {
+        setOffers([]);
+      }
+    } catch {
+      setOffers([]);
+    }
+  }, [token]);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -46,6 +73,10 @@ export default function AdminMenu() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    loadOffers();
+  }, [loadOffers]);
 
   const handleAddItem = async (e) => {
     e.preventDefault();
@@ -84,6 +115,78 @@ export default function AdminMenu() {
       load();
     } catch {
       setAddStatus('Network error');
+    }
+  };
+
+  const handleAddOffer = async (e) => {
+    e.preventDefault();
+    if (!offerForm.title.trim()) {
+      setOfferStatus('Title is required');
+      return;
+    }
+    setOfferStatus('Saving…');
+    try {
+      const res = await fetch('/api/offers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: offerForm.title.trim(),
+          subtitle: offerForm.subtitle.trim(),
+          description: offerForm.description.trim(),
+          active: offerForm.active,
+          sortOrder: Number(offerForm.sortOrder) || 0,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setOfferStatus(data.error || 'Could not save offer');
+        return;
+      }
+      setOfferStatus('Offer added.');
+      setOfferForm({
+        title: '',
+        subtitle: '',
+        description: '',
+        active: true,
+        sortOrder: 0,
+      });
+      loadOffers();
+    } catch {
+      setOfferStatus('Network error');
+    }
+  };
+
+  const toggleOfferActive = async (id, active) => {
+    setBusyOfferId(String(id));
+    try {
+      const res = await fetch(`/api/offers/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ active: !active }),
+      });
+      if (res.ok) await loadOffers();
+    } finally {
+      setBusyOfferId(null);
+    }
+  };
+
+  const deleteOffer = async (id) => {
+    if (!window.confirm('Remove this offer from the public menu?')) return;
+    setBusyOfferId(String(id));
+    try {
+      const res = await fetch(`/api/offers/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) await loadOffers();
+    } finally {
+      setBusyOfferId(null);
     }
   };
 
@@ -132,11 +235,12 @@ export default function AdminMenu() {
       <div className="mx-auto w-full max-w-[min(1680px,94vw)]">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
         <div>
-          <p className="text-xs font-bold uppercase text-brand-700 tracking-wider">Owner</p>
+          <p className="text-xs font-bold uppercase text-delivery-700 tracking-wider">Owner</p>
           <h1 className="font-display text-2xl md:text-3xl font-bold text-slate-900">Manage menu</h1>
           <p className="text-sm text-slate-600 mt-1 max-w-xl">
-            Add dishes and control what is <strong>available today</strong>. Each new calendar day, items become
-            available again unless you turn them off.
+            Add dishes, <strong>chef&apos;s specials</strong>, and <strong>promotional offers</strong>. Control what is{' '}
+            <strong>available today</strong> per dish. Each new calendar day, items become available again unless you
+            turn them off.
             {calendarDay && (
               <span className="block mt-1 text-xs text-slate-500">Server date: {calendarDay} (UTC)</span>
             )}
@@ -147,7 +251,7 @@ export default function AdminMenu() {
         </Link>
       </div>
 
-      <section className="panel p-6 md:p-8 mb-10 border border-brand-200 bg-gradient-to-br from-brand-50/90 to-white">
+      <section className="panel p-6 md:p-8 mb-10 border border-delivery-200 bg-gradient-to-br from-delivery-50/90 to-white">
         <h2 className="font-display text-lg font-bold text-slate-900 mb-4">Add menu item</h2>
         <form onSubmit={handleAddItem} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="contents">
@@ -221,7 +325,7 @@ export default function AdminMenu() {
                 type="checkbox"
                 checked={addForm.veg}
                 onChange={(e) => setAddForm((f) => ({ ...f, veg: e.target.checked }))}
-                className="rounded border-slate-300 text-brand-600"
+                className="rounded border-slate-300 text-delivery-600"
               />
               <span className="text-sm font-medium text-slate-800">Vegetarian</span>
             </label>
@@ -230,7 +334,7 @@ export default function AdminMenu() {
                 type="checkbox"
                 checked={addForm.isSpecial}
                 onChange={(e) => setAddForm((f) => ({ ...f, isSpecial: e.target.checked }))}
-                className="rounded border-slate-300 text-brand-600"
+                className="rounded border-slate-300 text-delivery-600"
               />
               <span className="text-sm font-medium text-slate-800">Chef&apos;s special</span>
             </label>
@@ -242,6 +346,124 @@ export default function AdminMenu() {
             {addStatus && <span className="text-sm text-slate-600">{addStatus}</span>}
           </div>
         </form>
+      </section>
+
+      <section className="panel p-6 md:p-8 mb-10 border border-amber-200/90 bg-gradient-to-br from-amber-50/50 to-white">
+        <h2 className="font-display text-lg font-bold text-slate-900 mb-1">Promotional offers</h2>
+        <p className="text-sm text-slate-600 mb-6 max-w-2xl">
+          Short promos shown under <strong>Specials &amp; offers</strong> on the public menu. Toggle visibility without
+          deleting.
+        </p>
+        <form onSubmit={handleAddOffer} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+          <div className="md:col-span-2">
+            <label htmlFor={`${formIds}-offer-title`} className="block text-sm font-medium text-slate-800 mb-1.5">
+              Title <span className="text-rose-600">*</span>
+            </label>
+            <input
+              id={`${formIds}-offer-title`}
+              className={inputClass}
+              value={offerForm.title}
+              onChange={(e) => setOfferForm((f) => ({ ...f, title: e.target.value }))}
+              placeholder="e.g. Weekend combo"
+            />
+          </div>
+          <div>
+            <label htmlFor={`${formIds}-offer-sub`} className="block text-sm font-medium text-slate-800 mb-1.5">
+              Subtitle
+            </label>
+            <input
+              id={`${formIds}-offer-sub`}
+              className={inputClass}
+              value={offerForm.subtitle}
+              onChange={(e) => setOfferForm((f) => ({ ...f, subtitle: e.target.value }))}
+              placeholder="One line highlight"
+            />
+          </div>
+          <div>
+            <label htmlFor={`${formIds}-offer-sort`} className="block text-sm font-medium text-slate-800 mb-1.5">
+              Sort order
+            </label>
+            <input
+              id={`${formIds}-offer-sort`}
+              type="number"
+              min="0"
+              className={inputClass}
+              value={offerForm.sortOrder}
+              onChange={(e) => setOfferForm((f) => ({ ...f, sortOrder: e.target.value }))}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label htmlFor={`${formIds}-offer-desc`} className="block text-sm font-medium text-slate-800 mb-1.5">
+              Description
+            </label>
+            <textarea
+              id={`${formIds}-offer-desc`}
+              rows={3}
+              className="input-field min-h-[88px] resize-y text-base"
+              value={offerForm.description}
+              onChange={(e) => setOfferForm((f) => ({ ...f, description: e.target.value }))}
+              placeholder="Terms, dates, or how the offer works"
+            />
+          </div>
+          <div className="md:col-span-2 flex flex-wrap items-center gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                className="rounded border-slate-300 text-delivery-600"
+                checked={offerForm.active}
+                onChange={(e) => setOfferForm((f) => ({ ...f, active: e.target.checked }))}
+              />
+              <span className="text-sm font-medium text-slate-800">Visible on menu when saved</span>
+            </label>
+            <button type="submit" className="btn-primary min-h-[44px] px-6 rounded-xl">
+              Add offer
+            </button>
+            {offerStatus && <span className="text-sm text-slate-600">{offerStatus}</span>}
+          </div>
+        </form>
+
+        {offers.length === 0 ? (
+          <p className="text-sm text-slate-500 border-t border-amber-100 pt-4">No offers yet. Add one above.</p>
+        ) : (
+          <ul className="divide-y divide-amber-100 border border-amber-100 rounded-xl overflow-hidden bg-white/80">
+            {offers.map((o) => {
+              const id = o._id;
+              const busy = busyOfferId === String(id);
+              return (
+                <li key={String(id)} className="flex flex-col sm:flex-row sm:items-center gap-3 p-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-slate-900">{o.title}</div>
+                    {o.subtitle && <div className="text-sm text-delivery-800 mt-0.5">{o.subtitle}</div>}
+                    {o.description && (
+                      <p className="text-sm text-slate-600 mt-2 line-clamp-2">{o.description}</p>
+                    )}
+                    <p className="text-xs text-slate-400 mt-1">Order: {o.sortOrder ?? 0}</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-delivery-600"
+                        checked={!!o.active}
+                        disabled={busy}
+                        onChange={() => toggleOfferActive(id, o.active)}
+                      />
+                      <span className="text-sm font-medium text-slate-800">Active</span>
+                    </label>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => deleteOffer(id)}
+                      className="text-sm font-semibold text-rose-700 hover:text-rose-900 px-2 py-1 rounded-lg hover:bg-rose-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section className="panel overflow-hidden">
@@ -300,7 +522,7 @@ export default function AdminMenu() {
             <button
               type="button"
               onClick={() => setNameSearch('')}
-              className="mt-2 text-sm font-semibold text-brand-700 underline decoration-brand-400 underline-offset-2 hover:text-brand-800"
+              className="mt-2 text-sm font-semibold text-delivery-700 underline decoration-delivery-400 underline-offset-2 hover:text-delivery-800"
             >
               Clear search
             </button>
@@ -326,7 +548,7 @@ export default function AdminMenu() {
                       <span className="font-semibold text-slate-900">{item.name}</span>
                       <span className="text-xs text-slate-500 uppercase tracking-wide">{item.category}</span>
                       {item.isSpecial && (
-                        <span className="text-xs bg-brand-100 text-brand-800 px-2 py-0.5 rounded-full">Special</span>
+                        <span className="text-xs bg-delivery-100 text-delivery-800 px-2 py-0.5 rounded-full">Special</span>
                       )}
                     </div>
                     <div className="text-sm text-slate-600 mt-1 tabular-nums">
@@ -336,7 +558,7 @@ export default function AdminMenu() {
                   <label className="flex items-center gap-2 shrink-0 cursor-pointer select-none">
                     <input
                       type="checkbox"
-                      className="rounded border-slate-300 text-brand-600 size-5"
+                      className="rounded border-slate-300 text-delivery-600 size-5"
                       checked={availableToday}
                       disabled={disabled}
                       onChange={(e) => setServingToday(id, e.target.checked)}

@@ -1,0 +1,15 @@
+{
+  "links": [
+    { "to": "/", "label": "Home" },
+    { "to": "/menu", "label": "Menu" },
+    { "to": "/cart", "label": "Cart" },
+    { "to": "/checkout", "label": "Checkout" },
+    { "to": "/track", "label": "Track" }
+  ],
+  "ownerLinks": [
+    { "to": "/", "label": "Home" },
+    { "to": "/menu", "label": "Menu" },
+    { "to": "/admin/menu", "label": "Manage menu" },
+    { "to": "/track", "label": "Track" }
+  ]
+}

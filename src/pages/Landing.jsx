@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import DishNameBackdrop from '../components/DishNameBackdrop.jsx';
 
@@ -190,21 +189,6 @@ export default function Landing() {
                         </a>
                       )}
                     </div>
-                    
-                    <div className="mt-12 grid grid-cols-3 gap-6 pt-8 border-t border-white/10">
-                      <div>
-                        <p className="text-3xl font-black text-white">100%</p>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Live Status</p>
-                      </div>
-                      <div>
-                        <p className="text-3xl font-black text-delivery-400">24/7</p>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Ordering</p>
-                      </div>
-                      <div>
-                        <p className="text-3xl font-black text-white">All</p>
-                        <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Portions</p>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Hero Previews */}
@@ -298,20 +282,13 @@ export default function Landing() {
               >
                 {isAdmin ? 'Manage menu' : 'Explore menu'}
               </a>
-              {isAdmin ? (
+              {isAdmin && (
                 <a
                   href="/admin/dashboard"
                   className="inline-flex h-12 sm:h-14 items-center justify-center rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md px-6 sm:px-8 text-base font-bold text-white transition-all hover:bg-white/10 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
                 >
                   Dashboard
                 </a>
-              ) : (
-                <Link
-                  to="/admin/login"
-                  className="inline-flex h-12 sm:h-14 items-center justify-center rounded-2xl border border-white/20 bg-white/5 backdrop-blur-md px-6 sm:px-8 text-base font-bold text-white transition-all hover:bg-white/10 hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-slate-400"
-                >
-                  Owner login
-                </Link>
               )}
             </div>
           </div>

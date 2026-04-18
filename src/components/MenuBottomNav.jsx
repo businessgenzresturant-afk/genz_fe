@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import { IconCartLine } from './icons.jsx';
 
 function IconHome({ className, active }) {
   return (
@@ -11,17 +12,13 @@ function IconHome({ className, active }) {
 function IconMenu({ className, active }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.5} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h10" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
     </svg>
   );
 }
 
-function IconCart({ className, active }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.5} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-    </svg>
-  );
+function IconCart({ className }) {
+  return <IconCartLine className={className} />;
 }
 
 function IconTrack({ className, active }) {

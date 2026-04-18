@@ -3,30 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import fallbackNav from '../assets/fallbackNav.json';
-
-function IconMenu({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  );
-}
-
-function IconClose({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-      <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  );
-}
-
-function IconCartLine({ className }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h15l-1.5 9h-12L6 6zM6 6L5 3H2M9 20a1 1 0 100-2 1 1 0 000 2zm8 0a1 1 0 100-2 1 1 0 000 2z" />
-    </svg>
-  );
-}
+import { IconCartLine, IconClose, IconMenu } from './icons.jsx';
 
 const defaultLinks = [
   { to: '/home', label: 'Home' },
@@ -56,6 +33,13 @@ export default function Navbar() {
   const { cart } = useCart();
   const cartCount = cart.items.reduce((s, i) => s + i.quantity, 0);
   const isMenuHome = location.pathname === '/' || location.pathname === '/menu';
+
+  const isNavActive = (to) => {
+    const path = location.pathname;
+    if (path === to) return true;
+    if (to === '/menu' && (path === '/' || path === '/menu')) return true;
+    return false;
+  };
   const [links, setLinks] = useState(defaultLinks);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -107,7 +91,7 @@ export default function Navbar() {
     `inline-flex min-h-[44px] md:min-h-[36px] items-center rounded-full px-3.5 py-2 md:px-3 md:py-1.5 text-sm md:text-sm xl:text-[15px] 2xl:text-base font-semibold transition-colors focus-ring ${
       isActive
         ? 'bg-delivery-500 text-white shadow-md'
-        : 'text-ink-muted hover:bg-slate-100 hover:text-ink'
+        : 'text-ink hover:bg-slate-100 hover:text-charcoal-900'
     }`;
 
   return (
@@ -129,14 +113,8 @@ export default function Navbar() {
               decoding="async"
             />
             <span className="sr-only">GEN-Z Restaurant</span>
-            <span
-              className={`font-menu ${
-                isMenuHome
-                  ? 'inline max-w-[min(200px,46vw)] truncate text-sm font-extrabold tracking-tight text-electric-800 sm:max-w-none sm:text-base'
-                  : 'font-sans max-[380px]:hidden text-xs sm:inline sm:text-sm xl:text-base 2xl:text-lg font-medium text-ink-muted'
-              }`}
-            >
-              {isMenuHome ? 'GEN-Z Restaurant' : 'Restaurant'}
+            <span className="font-menu inline max-w-[min(220px,52vw)] truncate text-sm font-semibold tracking-tight text-ink sm:max-w-none sm:text-base md:text-[17px]">
+              GEN-Z Restaurant
             </span>
           </Link>
           {isMenuHome && !isAdmin ? (
@@ -169,7 +147,7 @@ export default function Navbar() {
           </button>
           <nav className="hidden md:flex flex-wrap items-center justify-end gap-1 max-w-[calc(100%-10rem)] xl:max-w-none" aria-label="Main">
             {links.map((link) => {
-              const isActive = location.pathname === link.to;
+              const isActive = isNavActive(link.to);
               return (
                 <Link
                   key={`${link.to}-${link.label}`}
@@ -204,7 +182,7 @@ export default function Navbar() {
         >
           <div className="flex flex-col gap-1 py-3">
             {links.map((link) => {
-              const isActive = location.pathname === link.to;
+              const isActive = isNavActive(link.to);
               return (
                 <Link
                   key={`m-${link.to}-${link.label}`}

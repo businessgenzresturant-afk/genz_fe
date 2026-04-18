@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { IconCartLine } from '../components/icons.jsx';
 import fallbackMenu from '../assets/fallbackMenu.json';
 
 const shell =
@@ -354,12 +355,16 @@ export default function Menu() {
             {canOrder ? (
               <Link
                 to="/cart"
-                className="group flex items-center gap-3 rounded-2xl bg-white/70 backdrop-blur-md border border-white/20 px-5 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:bg-white transition-all"
+                className="group relative inline-flex min-h-[44px] items-center gap-2 rounded-2xl bg-white/70 backdrop-blur-md border border-white/20 px-4 py-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:bg-white transition-all text-electric-800"
+                aria-label={`Cart${cartCount ? `, ${cartCount} items` : ''}`}
               >
+                <IconCartLine className="h-7 w-7 shrink-0" />
                 <span className="font-semibold text-slate-900 text-sm">Cart</span>
-                <span className="bg-gradient-to-r from-delivery-500 to-flame-500 text-white text-xs font-bold px-2.5 py-1 rounded-full group-hover:brightness-105 transition-all">
-                  {cartCount}
-                </span>
+                {cartCount > 0 && (
+                  <span className="bg-gradient-to-r from-delivery-500 to-flame-500 text-white text-xs font-bold min-w-[1.25rem] px-2 py-0.5 rounded-full text-center tabular-nums group-hover:brightness-105 transition-all">
+                    {cartCount > 99 ? '99+' : cartCount}
+                  </span>
+                )}
               </Link>
             ) : (
               <Link
@@ -469,71 +474,89 @@ export default function Menu() {
             <h3 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Main Menu</h3>
             
             {/* Filter Controls Container */}
-            <div className="flex flex-col sm:flex-row items-center gap-4 bg-white/70 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
-              {/* Category Pills */}
-              <div className="flex gap-1 overflow-x-auto w-full sm:w-auto scrollbar-hide">
-                <button
-                  onClick={() => setActiveCategory(null)}
-                  className={`px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-                    !activeCategory
-                      ? 'bg-charcoal-900 text-white shadow-md'
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+            <div className="flex w-full min-w-0 flex-col gap-3 rounded-2xl border border-white/20 bg-white/70 p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-4">
+              {/* Category Pills — symmetric inset; scrollbar hidden (still swipe / wheel scroll) */}
+              <div className="min-w-0 flex-1 rounded-xl bg-slate-50/80 ring-1 ring-slate-200/60">
+                <div
+                  className="scrollbar-none flex min-h-[48px] items-center gap-2 overflow-x-auto overscroll-x-contain px-3 py-2 sm:min-h-[44px] sm:px-3 sm:py-2 [-webkit-overflow-scrolling:touch] snap-x snap-mandatory"
+                  role="tablist"
+                  aria-label="Menu categories"
                 >
-                  All
-                </button>
-                {categories.map((cat) => (
                   <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-5 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
-                      activeCategory === cat
+                    type="button"
+                    onClick={() => setActiveCategory(null)}
+                    className={`shrink-0 snap-start rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
+                      !activeCategory
                         ? 'bg-charcoal-900 text-white shadow-md'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        : 'text-slate-600 hover:bg-white hover:text-slate-900'
                     }`}
                   >
-                    {cat}
+                    All
                   </button>
-                ))}
+                  {categories.map((cat) => (
+                    <button
+                      type="button"
+                      key={cat}
+                      onClick={() => setActiveCategory(cat)}
+                      className={`shrink-0 snap-start rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
+                        activeCategory === cat
+                          ? 'bg-charcoal-900 text-white shadow-md'
+                          : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="hidden sm:block w-px h-8 bg-slate-200/80 mx-2" />
+              <div className="hidden h-8 w-px shrink-0 self-center bg-slate-200/80 sm:block" />
 
-              {/* Veg/Non-Veg Toggle */}
-              <div className="relative flex p-1 bg-slate-100/80 rounded-xl w-full sm:w-auto">
-                <div
-                  className="absolute inset-y-1 left-1 bg-white rounded-lg shadow-sm transition-all duration-300 ease-out border border-slate-200/50"
-                  style={{
-                    width: 'calc(33.333% - 2px)',
-                    transform: `translateX(${
-                      dietFilter === 'All' ? '0%' : dietFilter === 'Veg' ? '100%' : '200%'
-                    })`,
-                  }}
-                />
+              {/* Veg / Non-Veg — equal grid columns, no sliding layer (avoids misalignment) */}
+              <div
+                className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200/70 bg-slate-100/90 p-1 sm:w-auto sm:min-w-[min(100%,17.5rem)]"
+                role="group"
+                aria-label="Diet filter"
+              >
                 <button
+                  type="button"
                   onClick={() => setDietFilter('All')}
-                  className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-colors flex-1 text-center ${
-                    dietFilter === 'All' ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'
+                  className={`flex min-h-[40px] items-center justify-center rounded-lg px-2 text-xs font-bold transition-colors ${
+                    dietFilter === 'All'
+                      ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80'
+                      : 'text-slate-600 hover:bg-slate-200/60 hover:text-slate-800'
                   }`}
                 >
                   All
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDietFilter('Veg')}
-                  className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-colors flex-1 flex items-center justify-center gap-1.5 ${
-                    dietFilter === 'Veg' ? 'text-emerald-700' : 'text-slate-500 hover:text-emerald-600'
+                  className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-colors ${
+                    dietFilter === 'Veg'
+                      ? 'bg-white text-emerald-700 shadow-sm ring-1 ring-slate-200/80'
+                      : 'text-slate-600 hover:bg-slate-200/60 hover:text-emerald-700'
                   }`}
                 >
-                  <span className={`h-2 w-2 rounded-full ${dietFilter === 'Veg' ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                  <span
+                    className={`h-2 w-2 shrink-0 rounded-full ${dietFilter === 'Veg' ? 'bg-emerald-500' : 'bg-slate-300'}`}
+                    aria-hidden
+                  />
                   Veg
                 </button>
                 <button
+                  type="button"
                   onClick={() => setDietFilter('Non-Veg')}
-                  className={`relative z-10 px-4 py-1.5 text-xs font-bold rounded-lg transition-colors flex-1 flex items-center justify-center gap-1.5 ${
-                    dietFilter === 'Non-Veg' ? 'text-rose-700' : 'text-slate-500 hover:text-rose-600'
+                  className={`flex min-h-[40px] items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-bold transition-colors ${
+                    dietFilter === 'Non-Veg'
+                      ? 'bg-white text-rose-700 shadow-sm ring-1 ring-slate-200/80'
+                      : 'text-slate-600 hover:bg-slate-200/60 hover:text-rose-700'
                   }`}
                 >
-                  <span className={`h-2 w-2 rounded-full ${dietFilter === 'Non-Veg' ? 'bg-rose-500' : 'bg-slate-300'}`} />
+                  <span
+                    className={`h-2 w-2 shrink-0 rounded-full ${dietFilter === 'Non-Veg' ? 'bg-rose-500' : 'bg-slate-300'}`}
+                    aria-hidden
+                  />
                   Non
                 </button>
               </div>

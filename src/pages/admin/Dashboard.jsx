@@ -8,6 +8,87 @@ import fallbackOrders from '../../assets/fallbackOrders.json';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://127.0.0.1:5000';
 
+function csvEscape(val) {
+  if (val == null || val === '') return '';
+  const s = String(val);
+  if (/[",\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+function isLiveOrderId(id) {
+  return typeof id === 'string' && /^[a-f\d]{24}$/i.test(id);
+}
+
+function buildCsvFromOrders(list) {
+  const headers = [
+    'orderNo',
+    'createdAt',
+    'customerName',
+    'customerPhone',
+    'customerAddress',
+    'status',
+    'subtotal',
+    'discountAmount',
+    'couponCode',
+    'tax',
+    'deliveryCharge',
+    'total',
+    'paymentMethod',
+    'orderType',
+    'zone',
+    'sessionId',
+    'items',
+  ];
+  const lines = [headers.join(',')];
+  for (const o of list) {
+    const items = (o.items || [])
+      .map((line) => {
+        const name =
+          line.item && typeof line.item === 'object' && line.item.name
+            ? line.item.name
+            : typeof line.item === 'string'
+              ? line.item
+              : 'Item';
+        return `${name} (${line.size || 'full'}) x${line.quantity ?? 1}`;
+      })
+      .join('; ');
+    const row = [
+      csvEscape(o.orderNo),
+      csvEscape(o.createdAt ? new Date(o.createdAt).toISOString() : ''),
+      csvEscape(o.customer?.name),
+      csvEscape(o.customer?.phone),
+      csvEscape((o.customer?.address || '').replace(/\r?\n/g, ' ')),
+      csvEscape(o.status),
+      o.subtotal ?? '',
+      o.discountAmount ?? '',
+      csvEscape(o.couponCode),
+      o.tax ?? '',
+      o.deliveryCharge ?? '',
+      o.total ?? '',
+      csvEscape(o.paymentMethod),
+      csvEscape(o.orderType),
+      csvEscape(o.zone),
+      csvEscape(o.sessionId),
+      csvEscape(items),
+    ];
+    lines.push(row.join(','));
+  }
+  return `\uFEFF${lines.join('\r\n')}`;
+}
+
+function triggerCsvDownload(content, filename) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 const PIPELINE = ['Confirmed', 'Cooking', 'Out for Delivery', 'Delivered'];
 
 const STATUS_FILTERS = [
@@ -24,6 +105,9 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [orderIdSearch, setOrderIdSearch] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [exportBusy, setExportBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const socketRef = useRef();
   const ordersRef = useRef([]);
   const navigate = useNavigate();
@@ -112,6 +196,30 @@ export default function Dashboard() {
       }
     });
 
+    socketRef.current.on('order-deleted', (payload) => {
+      const id = payload?._id;
+      if (id == null) return;
+      setOrders((prev) => prev.filter((o) => String(o._id) !== String(id)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(String(id));
+        return next;
+      });
+    });
+
+    socketRef.current.on('orders-bulk-deleted', async () => {
+      try {
+        const res = await fetch('/api/orders', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json().catch(() => []);
+        setOrders(Array.isArray(data) ? data : []);
+      } catch {
+        setOrders((prev) => prev.filter((o) => o.readOnly === true));
+      }
+      setSelectedIds(new Set());
+    });
+
     return () => socketRef.current?.disconnect();
   }, [token, mergeOrder, navigate]);
 
@@ -135,6 +243,119 @@ export default function Dashboard() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const downloadCsv = useCallback(async () => {
+    setExportBusy(true);
+    const filename = `genz-orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    try {
+      const res = await fetch('/api/orders/export/csv', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        return;
+      }
+      triggerCsvDownload(buildCsvFromOrders(orders), filename);
+    } catch (e) {
+      console.error(e);
+      triggerCsvDownload(buildCsvFromOrders(orders), filename);
+    } finally {
+      setExportBusy(false);
+    }
+  }, [token, orders]);
+
+  const deleteOrderOne = async (orderId) => {
+    if (!isLiveOrderId(String(orderId))) return;
+    if (!window.confirm('Delete this order permanently?')) return;
+    setBusyId(String(orderId));
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => String(o._id) !== String(orderId)));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(String(orderId));
+          return next;
+        });
+      }
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const deleteSelected = async () => {
+    const ids = [...selectedIds].filter(isLiveOrderId);
+    if (!ids.length) return;
+    if (!window.confirm(`Delete ${ids.length} order(s) permanently? This cannot be undone.`)) return;
+    setDeleteBusy(true);
+    try {
+      const res = await fetch('/api/orders/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ ids }),
+      });
+      if (res.ok) {
+        setOrders((prev) => prev.filter((o) => !ids.includes(String(o._id))));
+        setSelectedIds(new Set());
+      }
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+  const deleteAllOrders = async () => {
+    if (
+      !window.confirm(
+        'Delete every order in the database? This cannot be undone. If the store is empty afterwards, the dashboard may show bundled demo orders until real orders arrive.',
+      )
+    ) {
+      return;
+    }
+    if (window.prompt('Type DELETE_ALL_ORDERS to confirm') !== 'DELETE_ALL_ORDERS') {
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      const res = await fetch('/api/orders/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ deleteAll: true, confirm: 'DELETE_ALL_ORDERS' }),
+      });
+      if (res.ok) {
+        const refresh = await fetch('/api/orders', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await refresh.json().catch(() => []);
+        setOrders(Array.isArray(data) ? data : []);
+        setSelectedIds(new Set());
+      }
+    } finally {
+      setDeleteBusy(false);
+    }
+  };
+
+  const toggleSelect = (id, readOnly) => {
+    if (readOnly || !isLiveOrderId(String(id))) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      const s = String(id);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
+      return next;
+    });
   };
 
   const activeOrders = orders.filter(
@@ -165,6 +386,15 @@ export default function Dashboard() {
     return list;
   }, [orders, statusFilter, orderIdSearch]);
 
+  const selectAllDeletableInView = useCallback(() => {
+    const live = filteredOrders
+      .filter((o) => !o.readOnly && isLiveOrderId(String(o._id)))
+      .map((o) => String(o._id));
+    setSelectedIds(new Set(live));
+  }, [filteredOrders]);
+
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+
   if (!token) return null;
 
   return (
@@ -182,7 +412,33 @@ export default function Dashboard() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => downloadCsv()}
+              disabled={exportBusy || orders.length === 0}
+              className="inline-flex min-h-[40px] items-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50 disabled:opacity-50"
+            >
+              {exportBusy ? 'Preparing…' : 'Download CSV'}
+            </button>
+            <button
+              type="button"
+              onClick={deleteSelected}
+              disabled={
+                deleteBusy || selectedIds.size === 0 || showingOrderFallback
+              }
+              className="inline-flex min-h-[40px] items-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
+            >
+              Delete selected ({selectedIds.size})
+            </button>
+            <button
+              type="button"
+              onClick={deleteAllOrders}
+              disabled={deleteBusy || showingOrderFallback}
+              className="inline-flex min-h-[40px] items-center rounded-xl border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+            >
+              Delete all orders
+            </button>
             <div className="px-4 py-2 rounded-full bg-emerald-600 text-white text-sm font-semibold shadow">
               {activeOrders} active
             </div>
@@ -238,13 +494,38 @@ export default function Dashboard() {
                 )}
               </div>
             </div>
-            <p className="text-xs text-slate-500 lg:shrink-0 lg:pb-2">
-              Showing{' '}
-              <span className="font-semibold text-slate-700">{filteredOrders.length}</span>
-              {orders.length !== filteredOrders.length && (
-                <span className="text-slate-400"> of {orders.length}</span>
-              )}
-            </p>
+            <div className="flex flex-col items-end gap-2 lg:pb-2">
+              <p className="text-xs text-slate-500">
+                Showing{' '}
+                <span className="font-semibold text-slate-700">{filteredOrders.length}</span>
+                {orders.length !== filteredOrders.length && (
+                  <span className="text-slate-400"> of {orders.length}</span>
+                )}
+              </p>
+              {!showingOrderFallback &&
+                filteredOrders.some(
+                  (o) => !o.readOnly && isLiveOrderId(String(o._id)),
+                ) && (
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllDeletableInView}
+                      className="text-xs font-semibold text-delivery-700 underline decoration-delivery-400 underline-offset-2 hover:text-delivery-800"
+                    >
+                      Select all in view
+                    </button>
+                    <span className="text-xs text-slate-300">·</span>
+                    <button
+                      type="button"
+                      onClick={clearSelection}
+                      disabled={selectedIds.size === 0}
+                      className="text-xs font-semibold text-slate-600 underline underline-offset-2 hover:text-slate-900 disabled:opacity-40"
+                    >
+                      Clear selection
+                    </button>
+                  </div>
+                )}
+            </div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -308,6 +589,7 @@ export default function Dashboard() {
             const status = order.status || 'Confirmed';
             const isBusy = busyId === String(id);
             const readOnly = order.readOnly === true;
+            const canSelect = !readOnly && isLiveOrderId(String(id));
 
             return (
               <div
@@ -315,10 +597,22 @@ export default function Dashboard() {
                 className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition"
               >
                 {/* TOP */}
-                <div className="flex justify-between items-center mb-3">
-                  <span className="font-semibold text-delivery-700">
-                    #{order.orderNo}
-                  </span>
+                <div className="mb-3 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-start gap-3">
+                    {canSelect && (
+                      <input
+                        type="checkbox"
+                        disabled={deleteBusy || busyId !== null}
+                        className="mt-1 h-4 w-4 shrink-0 rounded border-slate-300 text-delivery-600 focus:ring-delivery-500 disabled:opacity-50"
+                        checked={selectedIds.has(String(id))}
+                        onChange={() => toggleSelect(id, readOnly)}
+                        aria-label={`Select order ${order.orderNo}`}
+                      />
+                    )}
+                    <span className="font-semibold text-delivery-700">
+                      #{order.orderNo}
+                    </span>
+                  </div>
 
                   <StatusBadge status={status} />
                 </div>
@@ -377,6 +671,17 @@ export default function Dashboard() {
                       ? 'Order completed'
                       : 'Order rejected'}
                   </p>
+                )}
+
+                {canSelect && (
+                  <button
+                    type="button"
+                    disabled={deleteBusy || busyId !== null}
+                    onClick={() => deleteOrderOne(id)}
+                    className="mt-3 w-full rounded-lg border border-rose-200 bg-rose-50 py-2 text-sm font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
+                  >
+                    {isBusy ? 'Deleting…' : 'Delete order'}
+                  </button>
                 )}
               </div>
             );

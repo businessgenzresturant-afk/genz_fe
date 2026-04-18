@@ -40,7 +40,7 @@ function IconPulse({ className }) {
 function DashboardPreview() {
   const rows = [
     { id: '#1042', items: 'Veg noodles · Full', status: 'Cooking', tone: 'bg-amber-100/20 text-amber-300 border-amber-500/30' },
-    { id: '#1041', items: 'Paneer tikka · Half', status: 'Ready', tone: 'bg-brand-500/20 text-brand-300 border-brand-500/30' },
+    { id: '#1041', items: 'Paneer tikka · Half', status: 'Ready', tone: 'bg-delivery-500/20 text-delivery-300 border-delivery-500/30' },
     { id: '#1040', items: 'Momo platter · Full', status: 'New', tone: 'bg-white/10 text-white border-white/20' },
   ];
   return (
@@ -53,10 +53,10 @@ function DashboardPreview() {
       </div>
       <div className="border-b border-white/10 px-4 py-3 flex items-center justify-between gap-2 bg-white/5">
         <span className="text-sm font-bold text-white">Live queue</span>
-        <span className="text-[10px] font-bold uppercase tracking-widest text-brand-400 flex items-center gap-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-delivery-400 flex items-center gap-1.5">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-delivery-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-delivery-500"></span>
           </span>
           syncing
         </span>
@@ -77,7 +77,7 @@ function DashboardPreview() {
       </div>
       <div className="border-t border-white/10 px-4 py-3 flex items-center justify-between text-xs text-slate-400 bg-white/5 backdrop-blur-sm">
         <span className="font-medium">Today · 24 orders</span>
-        <span className="text-brand-400 font-bold">Avg. prep 12m</span>
+        <span className="text-delivery-400 font-bold">Avg. prep 12m</span>
       </div>
     </div>
   );
@@ -94,7 +94,7 @@ function MenuPreviewMini() {
     <div className="mt-4 rounded-[16px] border border-white/10 bg-white/5 p-4 shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-md">
       <div className="mb-3 flex items-center justify-between">
         <p className="text-xs font-bold uppercase tracking-widest text-slate-400">Menu Preview</p>
-        <span className="rounded-full bg-brand-500/20 px-2.5 py-1 text-[10px] font-bold text-brand-300 border border-brand-500/30">
+        <span className="rounded-full bg-delivery-500/20 px-2.5 py-1 text-[10px] font-bold text-delivery-300 border border-delivery-500/30">
           Live
         </span>
       </div>
@@ -102,13 +102,13 @@ function MenuPreviewMini() {
         {dishes.map((row) => (
           <div
             key={row.name}
-            className="group flex flex-col rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-500/50 hover:bg-white/10 p-3"
+            className="group flex flex-col rounded-xl border border-white/10 bg-white/5 transition hover:border-delivery-500/50 hover:bg-white/10 p-3"
           >
             <p className="text-sm font-bold text-white truncate">{row.name}</p>
             <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mt-1">{row.cat}</p>
             <div className="mt-3 flex justify-between gap-1 text-xs text-slate-300">
               <span className="font-medium"><span className="text-slate-500">H</span> ₹{row.half}</span>
-              <span className="font-bold text-brand-400"><span className="text-slate-500">F</span> ₹{row.full}</span>
+              <span className="font-bold text-delivery-400"><span className="text-slate-500">F</span> ₹{row.full}</span>
             </div>
           </div>
         ))}
@@ -121,12 +121,12 @@ export default function Landing() {
   const { isAdmin } = useAuth();
 
   return (
-    <div className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen flex flex-col selection:bg-brand-200 selection:text-brand-900">
+    <div className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen flex flex-col selection:bg-delivery-200 selection:text-delivery-900">
       {/* Antigravity Global Background */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-brand-100/40 blur-3xl opacity-60" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-orange-100/40 blur-3xl opacity-60" />
-        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-blue-100/40 blur-3xl opacity-60" />
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-delivery-100/40 blur-3xl opacity-60" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-flame-100/40 blur-3xl opacity-60" />
+        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-amber-100/40 blur-3xl opacity-60" />
       </div>
 
       <main className="flex w-full flex-1 flex-col relative z-10">
@@ -134,25 +134,25 @@ export default function Landing() {
           
           {/* FLOATING ISLAND HERO */}
           <section className="animate-float-up opacity-0 delay-100 relative">
-            <div className="relative overflow-hidden rounded-[40px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(20,184,166,0.2)] border border-white/10 transition-transform duration-500">
+            <div className="relative overflow-hidden rounded-[40px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500">
               
               {/* Island internal glows */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
               <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
-              <div className="absolute bottom-0 left-0 w-[70%] h-[70%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(20,184,166,0.15),transparent_50%)] pointer-events-none" />
+              <div className="absolute bottom-0 left-0 w-[70%] h-[70%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(252,128,25,0.15),transparent_50%)] pointer-events-none" />
               
               <div className="relative p-8 sm:p-10 md:p-16 lg:p-20">
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
                   
                   {/* Hero Content */}
                   <div className="lg:col-span-6 flex flex-col justify-center">
-                    <p className="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-brand-400 mb-4 inline-flex items-center gap-2">
-                      <span className="h-px w-8 bg-brand-400/50"></span>
+                    <p className="text-xs md:text-sm font-bold uppercase tracking-[0.2em] text-delivery-400 mb-4 inline-flex items-center gap-2">
+                      <span className="h-px w-8 bg-delivery-400/50"></span>
                       Food delivery · Gen-Z
                     </p>
                     <h1 className="font-sans text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-black tracking-tight leading-[1.05] text-white">
                       Crave it.<br />Order it.
-                      <span className="block text-transparent bg-clip-text bg-gradient-to-r from-brand-400 to-emerald-300 mt-2"> Track it live.</span>
+                      <span className="block text-transparent bg-clip-text bg-gradient-to-r from-delivery-400 to-amber-300 mt-2"> Track it live.</span>
                     </h1>
                     <p className="mt-6 text-base md:text-lg lg:text-xl text-slate-300 leading-relaxed max-w-2xl font-medium">
                       Browse the menu like your favourite delivery app — cart, checkout, and live order status in one smooth, antigravity flow.
@@ -160,7 +160,7 @@ export default function Landing() {
                     <div className="mt-8 flex flex-wrap items-center gap-4">
                       <a
                         href="/menu"
-                        className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-500 px-8 text-base md:text-lg font-bold text-white shadow-[0_10px_25px_rgba(20,184,166,0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_15px_35px_rgba(20,184,166,0.5)] focus:outline-none focus:ring-2 focus:ring-brand-400"
+                        className="inline-flex h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-delivery-500 to-flame-500 px-8 text-base md:text-lg font-bold text-white shadow-[0_10px_25px_rgba(252,128,25,0.4)] transition-all hover:-translate-y-1 hover:shadow-[0_15px_35px_rgba(252,128,25,0.5)] focus:outline-none focus:ring-2 focus:ring-delivery-400"
                       >
                         Order food online
                       </a>
@@ -187,7 +187,7 @@ export default function Landing() {
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Live Status</p>
                       </div>
                       <div>
-                        <p className="text-3xl font-black text-brand-400">24/7</p>
+                        <p className="text-3xl font-black text-delivery-400">24/7</p>
                         <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mt-1">Ordering</p>
                       </div>
                       <div>
@@ -199,7 +199,7 @@ export default function Landing() {
 
                   {/* Hero Previews */}
                   <div className="lg:col-span-6 relative">
-                    <div className="absolute inset-0 bg-brand-500/20 blur-[100px] rounded-full pointer-events-none" />
+                    <div className="absolute inset-0 bg-delivery-500/20 blur-[100px] rounded-full pointer-events-none" />
                     <div className="relative transform lg:translate-x-4 xl:translate-x-8">
                       <DashboardPreview />
                       <MenuPreviewMini />
@@ -221,7 +221,7 @@ export default function Landing() {
                 { num: '04', text: 'Live status updates from kitchen to doorstep.' }
               ].map((item, idx) => (
                 <div key={idx} className="flex gap-4 rounded-2xl border border-white/20 bg-white/70 backdrop-blur-md px-5 py-4 shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-transform hover:-translate-y-2">
-                  <span className="text-brand-500 font-black text-xl tabular-nums leading-none">{item.num}</span>
+                  <span className="text-delivery-500 font-black text-xl tabular-nums leading-none">{item.num}</span>
                   <span className="text-slate-700 font-semibold text-sm leading-snug">{item.text}</span>
                 </div>
               ))}
@@ -241,8 +241,8 @@ export default function Landing() {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
-                { icon: IconSteps, title: 'Curated flow', desc: 'Steps and forms stay obvious — fewer drop-offs from cart to confirmation.', color: 'from-brand-500 to-emerald-400', text: 'text-white' },
-                { icon: IconChef, title: 'Menu structure', desc: 'Categories and pricing stay scannable; half/full portions on every line.', color: 'from-amber-400 to-orange-400', text: 'text-white' },
+                { icon: IconSteps, title: 'Curated flow', desc: 'Steps and forms stay obvious — fewer drop-offs from cart to confirmation.', color: 'from-delivery-500 to-amber-400', text: 'text-white' },
+                { icon: IconChef, title: 'Menu structure', desc: 'Categories and pricing stay scannable; half/full portions on every line.', color: 'from-flame-400 to-orange-500', text: 'text-white' },
                 { icon: IconPulse, title: 'Live kitchen', desc: 'Guests track orders; owners see the queue update as tickets move.', color: 'from-blue-500 to-indigo-500', text: 'text-white' }
               ].map((card, idx) => (
                 <article key={idx} className="group flex flex-col rounded-[24px] border border-white/20 bg-white/70 backdrop-blur-md p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_30px_60px_rgba(0,0,0,0.12)]">
@@ -264,11 +264,11 @@ export default function Landing() {
       {/* GLASSMORPHIC FOOTER */}
       <footer className="mt-auto w-full shrink-0 border-t border-white/10 bg-slate-900/95 backdrop-blur-xl text-white">
         <div className={`${shell} py-10 md:py-16 relative overflow-hidden`}>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(20,184,166,0.1),transparent_50%)] pointer-events-none" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(252,128,25,0.1),transparent_50%)] pointer-events-none" />
           
           <div className="relative grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             <div className="lg:col-span-8">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-brand-400 mb-2">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-delivery-400 mb-2">
                 {isAdmin ? 'Owner Access' : 'Get started'}
               </p>
               <h2 className="text-3xl md:text-4xl lg:text-5xl font-black tracking-tight">
@@ -284,7 +284,7 @@ export default function Landing() {
             <div className="lg:col-span-4 flex flex-col sm:flex-row gap-4 lg:justify-end">
               <a
                 href={isAdmin ? '/admin/menu' : '/menu'}
-                className="inline-flex h-12 sm:h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-brand-500 to-emerald-500 px-6 sm:px-8 text-base font-bold text-white shadow-[0_10px_25px_rgba(20,184,166,0.3)] transition-all hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-brand-400"
+                className="inline-flex h-12 sm:h-14 items-center justify-center rounded-2xl bg-gradient-to-r from-delivery-500 to-flame-500 px-6 sm:px-8 text-base font-bold text-white shadow-[0_10px_25px_rgba(252,128,25,0.3)] transition-all hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-delivery-400"
               >
                 {isAdmin ? 'Manage menu' : 'Explore menu'}
               </a>

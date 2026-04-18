@@ -62,7 +62,7 @@ function MenuListItem({ item, dispatch, canOrder }) {
           <button
             disabled={!canOrder}
             onClick={() => dispatch({ type: 'ADD_ITEM', payload: { item, size: 'full' } })}
-            className="h-10 px-4 rounded-xl bg-gradient-to-r from-brand-500 to-emerald-500 text-white text-xs font-bold hover:brightness-105 hover:shadow-md disabled:opacity-40 transition-all focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="h-10 px-4 rounded-xl bg-gradient-to-r from-delivery-500 to-flame-500 text-white text-xs font-bold hover:brightness-105 hover:shadow-md disabled:opacity-40 transition-all focus:outline-none focus:ring-2 focus:ring-delivery-500"
           >
             Add Full
           </button>
@@ -78,10 +78,10 @@ function MenuListItem({ item, dispatch, canOrder }) {
 function SpecialCard({ item, dispatch, canOrder }) {
   return (
     <div className="min-w-[280px] w-[280px] snap-center group rounded-[20px] bg-white/70 backdrop-blur-md border border-white/20 p-5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all duration-300 hover:-translate-y-3 hover:bg-white/80 flex flex-col justify-between overflow-hidden relative">
-      <div className="absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br from-brand-100/50 to-transparent rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -right-4 -top-4 w-24 h-24 bg-gradient-to-br from-delivery-100/50 to-transparent rounded-full blur-2xl pointer-events-none" />
       <div>
         <div className="flex justify-between items-center mb-3">
-          <span className="inline-flex items-center rounded-full bg-brand-50 border border-brand-100 px-2.5 py-1 text-[10px] font-bold text-brand-700 uppercase tracking-wider shadow-sm">
+          <span className="inline-flex items-center rounded-full bg-delivery-50 border border-delivery-100 px-2.5 py-1 text-[10px] font-bold text-delivery-700 uppercase tracking-wider shadow-sm">
             Chef's Special
           </span>
           <span className={`h-2.5 w-2.5 rounded-full shadow-[inset_0_1px_2px_rgba(0,0,0,0.15)] ${item.veg ? 'bg-emerald-500' : 'bg-rose-500'}`} />
@@ -94,7 +94,7 @@ function SpecialCard({ item, dispatch, canOrder }) {
         <button
             disabled={!canOrder}
             onClick={() => dispatch({ type: 'ADD_ITEM', payload: { item, size: 'full' } })}
-            className="h-9 px-4 rounded-full bg-gradient-to-r from-brand-500 to-emerald-500 text-white text-xs font-bold hover:brightness-105 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 focus:ring-offset-transparent"
+            className="h-9 px-4 rounded-full bg-gradient-to-r from-delivery-500 to-flame-500 text-white text-xs font-bold hover:brightness-105 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-delivery-500 focus:ring-offset-2 focus:ring-offset-transparent"
           >
             Add Full
           </button>
@@ -164,18 +164,27 @@ export default function Menu() {
 
   const specials = useMemo(() => {
     const specialItems = items.filter(item => item.isSpecial);
-    return specialItems.length > 0 ? specialItems : items.slice(0, 4);
+    if (specialItems.length > 0) return specialItems;
+    
+    // Hardcoded demo specials for UI presentation
+    return [
+      { _id: 'sp1', name: 'Truffle Fries', category: 'Sides', veg: true, halfPrice: 120, fullPrice: 200, isSpecial: true },
+      { _id: 'sp2', name: 'Neon Nachos', category: 'Mexican', veg: true, halfPrice: 150, fullPrice: 280, isSpecial: true },
+      { _id: 'sp3', name: 'Kimchi Bao', category: 'Asian', veg: false, halfPrice: 180, fullPrice: 320, isSpecial: true },
+      { _id: 'sp4', name: 'Avo-Toast Art', category: 'Breakfast', veg: true, halfPrice: 160, fullPrice: 290, isSpecial: true },
+      { _id: 'sp5', name: 'Galaxy Macarons', category: 'Dessert', veg: true, halfPrice: 200, fullPrice: 350, isSpecial: true },
+    ];
   }, [items]);
 
   const cartCount = cart.items.reduce((s, i) => s + i.quantity, 0);
 
   return (
-    <main className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen pb-16 selection:bg-brand-200 selection:text-brand-900">
+    <main className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen pb-16 selection:bg-delivery-200 selection:text-delivery-900">
       {/* Background gradients for the Antigravity feel */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-brand-100/40 blur-3xl opacity-60" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-orange-100/40 blur-3xl opacity-60" />
-        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-blue-100/40 blur-3xl opacity-60" />
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-delivery-100/40 blur-3xl opacity-60" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-flame-100/40 blur-3xl opacity-60" />
+        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-amber-100/40 blur-3xl opacity-60" />
       </div>
 
       <div className={`${shell} pt-6 relative z-10 space-y-8 md:space-y-12`}>
@@ -205,7 +214,7 @@ export default function Menu() {
                 className="group flex items-center gap-3 rounded-2xl bg-white/70 backdrop-blur-md border border-white/20 px-5 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.08)] hover:bg-white transition-all"
               >
                 <span className="font-semibold text-slate-900 text-sm">Cart</span>
-                <span className="bg-gradient-to-r from-brand-500 to-emerald-500 text-white text-xs font-bold px-2.5 py-1 rounded-full group-hover:brightness-105 transition-all">
+                <span className="bg-gradient-to-r from-delivery-500 to-flame-500 text-white text-xs font-bold px-2.5 py-1 rounded-full group-hover:brightness-105 transition-all">
                   {cartCount}
                 </span>
               </Link>
@@ -220,21 +229,21 @@ export default function Menu() {
           </div>
 
           {/* Floating Island Promotion */}
-          <div className="relative overflow-hidden rounded-[32px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(20,184,166,0.2)] border border-white/10 transition-transform duration-500 hover:-translate-y-1">
+          <div className="relative overflow-hidden rounded-[32px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500 hover:-translate-y-1">
             {/* Subtle glow effects */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
             <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(20,184,166,0.15),transparent_50%)] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(252,128,25,0.15),transparent_50%)] pointer-events-none" />
             
             <div className="relative p-8 md:p-12 lg:p-16 flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="max-w-2xl">
-                <p className="text-brand-300 font-bold tracking-widest uppercase text-xs mb-3">Limited Time Offer</p>
+                <p className="text-delivery-300 font-bold tracking-widest uppercase text-xs mb-3">Limited Time Offer</p>
                 <h2 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] mb-4">
                   25% OFF ALL <br className="hidden md:block" />BURGERS THIS WEEK!
                 </h2>
                 <div className="flex items-center gap-3 mt-6">
                   <span className="text-slate-300 font-medium">Use Code:</span>
-                  <span className="bg-brand-500/20 border border-brand-400/30 text-brand-300 font-mono font-bold px-4 py-1.5 rounded-lg text-lg tracking-wider backdrop-blur-md">GZ25</span>
+                  <span className="bg-delivery-500/20 border border-delivery-400/30 text-delivery-300 font-mono font-bold px-4 py-1.5 rounded-lg text-lg tracking-wider backdrop-blur-md">GZ25</span>
                 </div>
               </div>
             </div>
@@ -246,7 +255,7 @@ export default function Menu() {
           <section className="animate-float-up opacity-0 delay-200">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Specials</h3>
-              <button className="text-sm font-semibold text-brand-600 hover:text-brand-700 transition-colors flex items-center gap-1">
+              <button className="text-sm font-semibold text-delivery-600 hover:text-delivery-700 transition-colors flex items-center gap-1">
                 See All Specials
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
               </button>

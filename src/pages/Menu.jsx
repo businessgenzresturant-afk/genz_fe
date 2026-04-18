@@ -323,12 +323,18 @@ export default function Menu() {
       extractPromoCode(featuredPromo.subtitle));
 
   return (
-    <main className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen pb-16 selection:bg-delivery-200 selection:text-delivery-900">
+    <main className="w-full overflow-x-hidden text-slate-800 relative min-h-screen pb-16 selection:bg-delivery-200 selection:text-delivery-900">
+      {/* Visible Food Image Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center opacity-60" />
+        <div className="absolute inset-0 bg-[#FDFDFD]/85 backdrop-blur-[2px]" />
+      </div>
+
       {/* Background gradients for the Antigravity feel */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-delivery-100/40 blur-3xl opacity-60" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-flame-100/40 blur-3xl opacity-60" />
-        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-amber-100/40 blur-3xl opacity-60" />
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-delivery-100/40 blur-3xl opacity-80" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-flame-100/40 blur-3xl opacity-80" />
+        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-amber-100/40 blur-3xl opacity-80" />
       </div>
 
       <div className={`${shell} pt-6 relative z-10 space-y-8 md:space-y-12`}>
@@ -379,6 +385,11 @@ export default function Menu() {
           {/* Floating Island Promotion — data from /api/offers, demo if unavailable */}
           {featuredPromo && (
             <div className="relative overflow-hidden rounded-[32px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500 hover:-translate-y-1">
+              
+              {/* Visible Hero Background Image */}
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=1981&auto=format&fit=crop')] bg-cover bg-right opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900 via-charcoal-900/95 to-charcoal-900/20 pointer-events-none" />
+
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
               <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
               <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-[radial-gradient(ellipse_at_bottom_left,rgba(252,128,25,0.15),transparent_50%)] pointer-events-none" />

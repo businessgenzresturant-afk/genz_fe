@@ -121,12 +121,18 @@ export default function Landing() {
   const { isAdmin } = useAuth();
 
   return (
-    <div className="w-full overflow-x-hidden text-slate-800 bg-[#FDFDFD] relative min-h-screen flex flex-col selection:bg-delivery-200 selection:text-delivery-900">
-      {/* Antigravity Global Background */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-delivery-100/40 blur-3xl opacity-60" />
-        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-flame-100/40 blur-3xl opacity-60" />
-        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-amber-100/40 blur-3xl opacity-60" />
+    <div className="w-full overflow-x-hidden text-slate-800 relative min-h-screen flex flex-col selection:bg-delivery-200 selection:text-delivery-900">
+      {/* Visible Food Image Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-60" />
+        <div className="absolute inset-0 bg-[#FDFDFD]/80" />
+      </div>
+
+      {/* Antigravity Global Background Glows */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0" aria-hidden="true">
+        <div className="absolute -top-[10%] -left-[10%] w-[50%] h-[50%] rounded-full bg-delivery-100/40 blur-3xl opacity-80" />
+        <div className="absolute top-[20%] -right-[10%] w-[40%] h-[40%] rounded-full bg-flame-100/40 blur-3xl opacity-80" />
+        <div className="absolute bottom-[0%] left-[20%] w-[30%] h-[30%] rounded-full bg-amber-100/40 blur-3xl opacity-80" />
       </div>
 
       <main className="flex w-full flex-1 flex-col relative z-10">
@@ -136,6 +142,10 @@ export default function Landing() {
           <section className="animate-float-up opacity-0 delay-100 relative">
             <div className="relative overflow-hidden rounded-[40px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500">
               
+              {/* Visible Hero Background Image */}
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1965&auto=format&fit=crop')] bg-cover bg-right opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900 via-charcoal-900/95 to-charcoal-900/20 pointer-events-none" />
+
               {/* Island internal glows */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
               <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
@@ -198,13 +208,13 @@ export default function Landing() {
                   </div>
 
                   {/* Hero Previews */}
-                  <div className="lg:col-span-6 relative">
+                  {/* <div className="lg:col-span-6 relative">
                     <div className="absolute inset-0 bg-delivery-500/20 blur-[100px] rounded-full pointer-events-none" />
                     <div className="relative transform lg:translate-x-4 xl:translate-x-8">
                       <DashboardPreview />
                       <MenuPreviewMini />
                     </div>
-                  </div>
+                  </div> */}
 
                 </div>
               </div>

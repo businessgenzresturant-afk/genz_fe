@@ -123,8 +123,8 @@ export default function Landing() {
     <div className="w-full overflow-x-hidden text-slate-800 relative min-h-screen flex flex-col selection:bg-delivery-200 selection:text-delivery-900">
       {/* Visible Food Image Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-60" />
-        <div className="absolute inset-0 bg-[#FDFDFD]/80" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center opacity-80" />
+        <div className="absolute inset-0 bg-[#FDFDFD]/50" />
       </div>
 
       {/* Antigravity Global Background Glows */}
@@ -142,8 +142,8 @@ export default function Landing() {
             <div className="relative overflow-hidden rounded-[40px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500">
               
               {/* Visible Hero Background Image */}
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1965&auto=format&fit=crop')] bg-cover bg-right opacity-40" />
-              <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900 via-charcoal-900/95 to-charcoal-900/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1965&auto=format&fit=crop')] bg-cover bg-right opacity-70" />
+              <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900 via-charcoal-900/90 to-charcoal-900/20 pointer-events-none" />
 
               {/* Island internal glows */}
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />

@@ -19,6 +19,7 @@ export default function Checkout() {
   const [couponError, setCouponError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [paySettings, setPaySettings] = useState({ upiId: '', qrUrl: null });
 
   useEffect(() => {
     if (!sessionId) return;
@@ -36,6 +37,19 @@ export default function Checkout() {
       })
       .catch(() => {});
   }, [sessionId]);
+
+  useEffect(() => {
+    fetch('/api/settings/checkout')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!data) return;
+        setPaySettings({
+          upiId: typeof data.upiId === 'string' ? data.upiId : '',
+          qrUrl: data.qrUrl || null,
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   const validateAndApplyCoupon = useCallback(
     async (code, subtotalAmount) => {
@@ -112,6 +126,9 @@ export default function Checkout() {
   const tax = Math.round(afterDiscount * 0.05);
   const delivery = orderType === 'delivery' && subtotal > 0 ? 30 : 0;
   const grandTotal = afterDiscount + tax + delivery;
+
+  const hasUpiDetails =
+    !!(paySettings.qrUrl || (typeof paySettings.upiId === 'string' && paySettings.upiId.trim()));
 
   useEffect(() => {
     if (!appliedCoupon?.code) return undefined;
@@ -356,36 +373,59 @@ export default function Checkout() {
 
       <div className="panel p-6 md:p-8 mb-8">
         <h3 className="font-display font-semibold text-lg text-slate-900 mb-4">Payment</h3>
-        <div className="bg-slate-50 rounded-xl p-4 mb-5 border border-slate-200">
-          <div className="text-sm font-medium text-slate-800 mb-2">UPI QR</div>
-          <div className="w-full h-32 bg-slate-200/80 rounded-lg flex items-center justify-center text-slate-500 text-sm mb-2">
-            QR preview
-          </div>
-          <div className="text-sm text-slate-700 mb-3 font-mono">restaurant@upi</div>
-          <button type="button" className="w-full btn-secondary py-2 text-sm">
-            Download QR
-          </button>
+        <div className="space-y-3 mb-5">
+          <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
+            <input
+              type="radio"
+              name="pay"
+              className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
+              checked={payment === 'UPI'}
+              onChange={() => setPayment('UPI')}
+            />
+            <span className="text-slate-800">
+              {hasUpiDetails ? 'UPI (QR / ID below)' : 'UPI'}
+            </span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
+            <input
+              type="radio"
+              name="pay"
+              className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
+              checked={payment === 'COD'}
+              onChange={() => setPayment('COD')}
+            />
+            <span className="text-slate-800">Cash on delivery / at counter</span>
+          </label>
         </div>
-        <label className="flex items-center gap-2 mb-3 cursor-pointer">
-          <input
-            type="radio"
-            name="pay"
-            className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
-            checked={payment === 'UPI'}
-            onChange={() => setPayment('UPI')}
-          />
-          <span className="text-slate-800">UPI (scan above)</span>
-        </label>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            name="pay"
-            className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
-            checked={payment === 'COD'}
-            onChange={() => setPayment('COD')}
-          />
-          <span className="text-slate-800">Cash on delivery / at counter</span>
-        </label>
+        {hasUpiDetails && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-4 space-y-4">
+            {paySettings.qrUrl && (
+              <div>
+                <div className="text-sm font-medium text-slate-800 mb-2">UPI QR</div>
+                <div className="rounded-lg border border-slate-200 bg-white overflow-hidden max-w-xs mx-auto sm:mx-0">
+                  <img
+                    src={paySettings.qrUrl}
+                    alt="Scan to pay with UPI"
+                    className="w-full h-auto object-contain"
+                  />
+                </div>
+                <a
+                  href={paySettings.qrUrl}
+                  download
+                  className="mt-3 inline-flex w-full sm:w-auto justify-center btn-secondary py-2.5 px-4 text-sm rounded-xl"
+                >
+                  Download QR
+                </a>
+              </div>
+            )}
+            {paySettings.upiId?.trim() && (
+              <div>
+                <div className="text-sm font-medium text-slate-800 mb-1">UPI ID</div>
+                <p className="text-sm text-slate-900 font-mono break-all">{paySettings.upiId.trim()}</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (

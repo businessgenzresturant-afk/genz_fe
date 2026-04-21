@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
-import { IconCartLine } from '../components/icons.jsx';
+import { IconCartLine, IconCopy } from '../components/icons.jsx';
 import fallbackMenu from '../assets/fallbackMenu.json';
 
 const shell =
@@ -30,6 +30,31 @@ function extractPromoCode(text) {
   if (explicit) return explicit[1];
   const loose = text.match(/\b([A-Z]{2,}\d{2,}|[A-Z0-9]{5,})\b/);
   return loose ? loose[1] : null;
+}
+
+async function copyTextToClipboard(text) {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* continue to fallback */
+  }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 function OfferDescriptionInfo({ description, idPrefix = 'offer' }) {
@@ -226,8 +251,10 @@ export default function Menu() {
   const [items, setItems] = useState([]);
   const [activeCategory, setActiveCategory] = useState(null);
   const [dietFilter, setDietFilter] = useState('All'); // 'All', 'Veg', 'Non-Veg'
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [usingFallbackMenu, setUsingFallbackMenu] = useState(false);
   const [promoOffers, setPromoOffers] = useState(DEMO_PROMO_OFFERS);
+  const [featuredCodeCopied, setFeaturedCodeCopied] = useState(false);
 
   const { cart, dispatch } = useCart();
   const { isAdmin } = useAuth();
@@ -272,6 +299,22 @@ export default function Menu() {
         setPromoOffers(list.length > 0 ? list : DEMO_PROMO_OFFERS);
       })
       .catch(() => setPromoOffers(DEMO_PROMO_OFFERS));
+  }, []);
+
+  useEffect(() => {
+    if (!featuredCodeCopied) return undefined;
+    const t = window.setTimeout(() => setFeaturedCodeCopied(false), 2200);
+    return () => window.clearTimeout(t);
+  }, [featuredCodeCopied]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)');
+    const collapse = () => {
+      if (mq.matches) setCategoriesExpanded(false);
+    };
+    collapse();
+    mq.addEventListener('change', collapse);
+    return () => mq.removeEventListener('change', collapse);
   }, []);
 
   const grouped = useMemo(() => groupItemsByCategory(items), [items]);
@@ -322,12 +365,18 @@ export default function Menu() {
       extractPromoCode(featuredPromo.description) ||
       extractPromoCode(featuredPromo.subtitle));
 
+  const copyFeaturedPromoCode = useCallback(async () => {
+    if (!promoCode) return;
+    const ok = await copyTextToClipboard(promoCode);
+    if (ok) setFeaturedCodeCopied(true);
+  }, [promoCode]);
+
   return (
     <main className="w-full overflow-x-hidden text-slate-800 relative min-h-screen pb-16 selection:bg-delivery-200 selection:text-delivery-900">
       {/* Visible Food Image Background */}
       <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center opacity-60" />
-        <div className="absolute inset-0 bg-[#FDFDFD]/85 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1974&auto=format&fit=crop')] bg-cover bg-center opacity-80" />
+        <div className="absolute inset-0 bg-[#FDFDFD]/60 backdrop-blur-[2px]" />
       </div>
 
       {/* Background gradients for the Antigravity feel */}
@@ -387,8 +436,8 @@ export default function Menu() {
             <div className="relative overflow-hidden rounded-[32px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500 hover:-translate-y-1">
               
               {/* Visible Hero Background Image */}
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=1981&auto=format&fit=crop')] bg-cover bg-right opacity-40" />
-              <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900 via-charcoal-900/95 to-charcoal-900/20 pointer-events-none" />
+              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?q=80&w=1981&auto=format&fit=crop')] bg-cover bg-right opacity-70" />
+              <div className="absolute inset-0 bg-gradient-to-r from-charcoal-900 via-charcoal-900/90 to-charcoal-900/20 pointer-events-none" />
 
               <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
               <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.05),transparent_50%)] pointer-events-none" />
@@ -414,11 +463,26 @@ export default function Menu() {
                     </p>
                   ) : null}
                   {promoCode ? (
-                    <div className="flex flex-wrap items-center gap-3 mt-6">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mt-6">
                       <span className="text-slate-300 font-medium">Use code</span>
-                      <span className="bg-delivery-500/20 border border-delivery-400/30 text-delivery-300 font-mono font-bold px-4 py-1.5 rounded-lg text-base sm:text-lg tracking-wider backdrop-blur-md">
-                        {promoCode}
-                      </span>
+                      <div className="inline-flex items-stretch rounded-lg overflow-hidden border border-delivery-400/30 bg-delivery-500/20 backdrop-blur-md shadow-sm">
+                        <span className="font-mono font-bold px-4 py-2 sm:py-1.5 text-base sm:text-lg tracking-wider text-delivery-300 tabular-nums self-center">
+                          {promoCode}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={copyFeaturedPromoCode}
+                          className="flex items-center justify-center px-3 min-h-[44px] sm:min-h-0 border-l border-delivery-400/30 text-delivery-200 hover:bg-delivery-500/35 hover:text-white transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-delivery-400/70"
+                          aria-label={`Copy coupon code ${promoCode}`}
+                        >
+                          <IconCopy className="h-5 w-5 shrink-0" />
+                        </button>
+                      </div>
+                      {featuredCodeCopied ? (
+                        <span className="text-sm font-semibold text-delivery-300" role="status">
+                          Copied!
+                        </span>
+                      ) : null}
                     </div>
                   ) : null}
                   {morePromos.length > 0 ? (
@@ -481,25 +545,28 @@ export default function Menu() {
 
         {/* 🔥 MAIN MENU SECTION */}
         <section className="animate-float-up opacity-0 delay-300">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div className="mb-6 space-y-4">
             <h3 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Main Menu</h3>
-            
-            {/* Filter Controls Container */}
-            <div className="flex w-full min-w-0 flex-col gap-3 rounded-2xl border border-white/20 bg-white/70 p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-md sm:flex-row sm:items-stretch sm:gap-4">
-              {/* Category Pills — symmetric inset; scrollbar hidden (still swipe / wheel scroll) */}
+
+            {/* Filter controls: mobile = one clipped row + Show more; md+ = wrapped chips */}
+            <div className="flex w-full min-w-0 flex-col gap-3 rounded-2xl border border-white/20 bg-white/70 p-2.5 shadow-[0_20px_50px_rgba(0,0,0,0.08)] backdrop-blur-md lg:flex-row lg:items-stretch lg:gap-4">
               <div className="min-w-0 flex-1 rounded-xl bg-slate-50/80 ring-1 ring-slate-200/60">
                 <div
-                  className="scrollbar-none flex min-h-[48px] items-center gap-2 overflow-x-auto overscroll-x-contain px-3 py-2 sm:min-h-[44px] sm:px-3 sm:py-2 [-webkit-overflow-scrolling:touch] snap-x snap-mandatory"
+                  className={`flex gap-2 px-2 py-2.5 sm:px-3 sm:py-3 md:flex-wrap md:overflow-visible ${
+                    categoriesExpanded
+                      ? 'max-md:flex-wrap max-md:overflow-visible'
+                      : 'max-md:flex-nowrap max-md:overflow-x-hidden'
+                  }`}
                   role="tablist"
                   aria-label="Menu categories"
                 >
                   <button
                     type="button"
                     onClick={() => setActiveCategory(null)}
-                    className={`shrink-0 snap-start rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
+                    className={`shrink-0 rounded-xl px-3.5 py-2 text-left text-sm font-semibold leading-snug transition-all sm:px-4 max-md:whitespace-nowrap ${
                       !activeCategory
-                        ? 'bg-charcoal-900 text-white shadow-md'
-                        : 'text-slate-600 hover:bg-white hover:text-slate-900'
+                        ? 'bg-charcoal-900 text-white shadow-md ring-1 ring-charcoal-800/80'
+                        : 'bg-white/80 text-slate-700 ring-1 ring-slate-200/80 hover:bg-white hover:text-slate-900'
                     }`}
                   >
                     All
@@ -509,23 +576,38 @@ export default function Menu() {
                       type="button"
                       key={cat}
                       onClick={() => setActiveCategory(cat)}
-                      className={`shrink-0 snap-start rounded-xl px-4 py-2 text-sm font-semibold whitespace-nowrap transition-all ${
+                      className={`shrink-0 rounded-xl px-3.5 py-2 text-left text-sm font-semibold leading-snug transition-all sm:px-4 max-md:whitespace-nowrap md:max-w-[min(100%,20rem)] ${
                         activeCategory === cat
-                          ? 'bg-charcoal-900 text-white shadow-md'
-                          : 'text-slate-600 hover:bg-white hover:text-slate-900'
-                      }`}
+                          ? 'bg-charcoal-900 text-white shadow-md ring-1 ring-charcoal-800/80'
+                          : 'bg-white/80 text-slate-700 ring-1 ring-slate-200/80 hover:bg-white hover:text-slate-900'
+                      } ${categoriesExpanded ? 'max-md:max-w-[min(100%,20rem)] max-md:whitespace-normal' : ''}`}
                     >
                       {cat}
                     </button>
                   ))}
                 </div>
+                {categories.length > 0 && (
+                  <div className="border-t border-slate-200/70 md:hidden">
+                    <button
+                      type="button"
+                      className="w-full py-2.5 text-center text-sm font-semibold text-delivery-800 hover:bg-white/60 active:bg-white/80 transition-colors rounded-b-[10px]"
+                      aria-expanded={categoriesExpanded}
+                      onClick={() => setCategoriesExpanded((v) => !v)}
+                    >
+                      {categoriesExpanded ? 'Show less' : 'Show more'}
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div className="hidden h-8 w-px shrink-0 self-center bg-slate-200/80 sm:block" />
-
-              {/* Veg / Non-Veg — equal grid columns, no sliding layer (avoids misalignment) */}
               <div
-                className="grid w-full grid-cols-3 gap-1 rounded-xl border border-slate-200/70 bg-slate-100/90 p-1 sm:w-auto sm:min-w-[min(100%,17.5rem)]"
+                className="hidden w-px shrink-0 self-stretch bg-slate-200/80 lg:block"
+                aria-hidden
+              />
+
+              {/* Veg / Non-Veg */}
+              <div
+                className="grid w-full shrink-0 grid-cols-3 gap-1 rounded-xl border border-slate-200/70 bg-slate-100/90 p-1 lg:w-[min(100%,18rem)] lg:self-center"
                 role="group"
                 aria-label="Diet filter"
               >
@@ -568,7 +650,7 @@ export default function Menu() {
                     className={`h-2 w-2 shrink-0 rounded-full ${dietFilter === 'Non-Veg' ? 'bg-rose-500' : 'bg-slate-300'}`}
                     aria-hidden
                   />
-                  Non
+                  Non-Veg
                 </button>
               </div>
             </div>

@@ -10,6 +10,7 @@ import OrderTrack from './pages/OrderTrack.jsx';
 import Login from './pages/admin/Login.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import AdminMenu from './pages/admin/AdminMenu.jsx';
+import AdminPayment from './pages/admin/AdminPayment.jsx';
 
 export default function App() {
   return (
@@ -50,6 +51,14 @@ export default function App() {
           element={
             <AdminOnly>
               <AdminMenu />
+            </AdminOnly>
+          }
+        />
+        <Route
+          path="/admin/payment"
+          element={
+            <AdminOnly>
+              <AdminPayment />
             </AdminOnly>
           }
         />

@@ -20,6 +20,9 @@ export default function AdminMenu() {
   });
   const [addStatus, setAddStatus] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState(null);
+  const [editStatus, setEditStatus] = useState('');
   const [nameSearch, setNameSearch] = useState('');
   const [offers, setOffers] = useState([]);
   const [offerForm, setOfferForm] = useState({
@@ -215,6 +218,59 @@ export default function AdminMenu() {
       }
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const startEdit = (item) => {
+    setEditingId(String(item._id));
+    setEditStatus('');
+    setEditForm({
+      name: item.name || '',
+      category: item.category || '',
+      halfPrice: String(item.halfPrice ?? ''),
+      fullPrice: String(item.fullPrice ?? ''),
+      veg: !!item.veg,
+      isSpecial: !!item.isSpecial,
+      available: item.available !== false,
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm(null);
+    setEditStatus('');
+  };
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    if (!editingId || !editForm) return;
+    setEditStatus('Saving…');
+    try {
+      const res = await fetch(`/api/menu/${editingId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: editForm.name.trim(),
+          category: editForm.category.trim(),
+          halfPrice: Number(editForm.halfPrice),
+          fullPrice: Number(editForm.fullPrice),
+          veg: editForm.veg,
+          isSpecial: editForm.isSpecial,
+          available: editForm.available,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setEditStatus(data.error || 'Could not save');
+        return;
+      }
+      cancelEdit();
+      await load();
+    } catch {
+      setEditStatus('Network error');
     }
   };
 
@@ -596,6 +652,102 @@ export default function AdminMenu() {
               const id = item._id;
               const availableToday = !item.offToday;
               const disabled = busyId === String(id);
+              const isEditing = editingId === String(id);
+
+              if (isEditing && editForm) {
+                return (
+                  <li key={String(id)} className="p-4 bg-slate-50/90 border-b border-slate-200">
+                    <form onSubmit={saveEdit} className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">Name</label>
+                          <input
+                            required
+                            className={inputClass}
+                            value={editForm.name}
+                            onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+                          <input
+                            required
+                            list={categoryListId}
+                            className={inputClass}
+                            value={editForm.category}
+                            onChange={(e) => setEditForm((f) => ({ ...f, category: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">Half (₹)</label>
+                          <input
+                            required
+                            type="number"
+                            min="0"
+                            className={inputClass}
+                            value={editForm.halfPrice}
+                            onChange={(e) => setEditForm((f) => ({ ...f, halfPrice: e.target.value }))}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">Full (₹)</label>
+                          <input
+                            required
+                            type="number"
+                            min="0"
+                            className={inputClass}
+                            value={editForm.fullPrice}
+                            onChange={(e) => setEditForm((f) => ({ ...f, fullPrice: e.target.value }))}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-4 items-center">
+                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={editForm.veg}
+                            onChange={(e) => setEditForm((f) => ({ ...f, veg: e.target.checked }))}
+                            className="rounded border-slate-300 text-delivery-600"
+                          />
+                          Vegetarian
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={editForm.isSpecial}
+                            onChange={(e) => setEditForm((f) => ({ ...f, isSpecial: e.target.checked }))}
+                            className="rounded border-slate-300 text-delivery-600"
+                          />
+                          Chef&apos;s special
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer text-sm">
+                          <input
+                            type="checkbox"
+                            checked={editForm.available}
+                            onChange={(e) => setEditForm((f) => ({ ...f, available: e.target.checked }))}
+                            className="rounded border-slate-300 text-delivery-600"
+                          />
+                          On public menu
+                        </label>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button type="submit" className="btn-primary min-h-[40px] px-5 rounded-xl text-sm">
+                          Save changes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEdit}
+                          className="btn-secondary min-h-[40px] px-5 rounded-xl text-sm"
+                        >
+                          Cancel
+                        </button>
+                        {editStatus && <span className="text-sm text-slate-600">{editStatus}</span>}
+                      </div>
+                    </form>
+                  </li>
+                );
+              }
+
               return (
                 <li
                   key={String(id)}
@@ -613,21 +765,34 @@ export default function AdminMenu() {
                       {item.isSpecial && (
                         <span className="text-xs bg-delivery-100 text-delivery-800 px-2 py-0.5 rounded-full">Special</span>
                       )}
+                      {item.available === false && (
+                        <span className="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full">Hidden</span>
+                      )}
                     </div>
                     <div className="text-sm text-slate-600 mt-1 tabular-nums">
                       Half ₹{item.halfPrice} · Full ₹{item.fullPrice}
                     </div>
                   </div>
-                  <label className="flex items-center gap-2 shrink-0 cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      className="rounded border-slate-300 text-delivery-600 size-5"
-                      checked={availableToday}
+                  <div className="flex flex-wrap items-center gap-3 shrink-0">
+                    <button
+                      type="button"
                       disabled={disabled}
-                      onChange={(e) => setServingToday(id, e.target.checked)}
-                    />
-                    <span className="text-sm font-medium text-slate-800 whitespace-nowrap">Available today</span>
-                  </label>
+                      onClick={() => startEdit(item)}
+                      className="text-sm font-semibold text-delivery-700 hover:text-delivery-900 px-3 py-2 rounded-lg hover:bg-delivery-50 min-h-[44px]"
+                    >
+                      Edit
+                    </button>
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        className="rounded border-slate-300 text-delivery-600 size-5"
+                        checked={availableToday}
+                        disabled={disabled}
+                        onChange={(e) => setServingToday(id, e.target.checked)}
+                      />
+                      <span className="text-sm font-medium text-slate-800 whitespace-nowrap">Available today</span>
+                    </label>
+                  </div>
                 </li>
               );
             })}

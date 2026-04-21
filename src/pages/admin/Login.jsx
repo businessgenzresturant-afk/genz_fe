@@ -43,7 +43,7 @@ export default function Login() {
               name="email"
               type="email"
               className="input-field min-h-[48px]"
-              defaultValue="owner@genz.com"
+              defaultValue="example@gmail.com"
               autoComplete="username"
             />
           </div>

@@ -1,5 +1,23 @@
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+
+/** No fixed `id` — same id makes react-hot-toast replace the toast instead of stacking. */
+function showLoginErrorToast(message) {
+  const text = message?.trim() || 'Something went wrong';
+  toast.custom(
+    (t) => (
+      <button
+        type="button"
+        onClick={() => toast.dismiss(t.id)}
+        className="toast-rise-from-bottom max-w-[min(90vw,22rem)] cursor-pointer rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-left text-sm font-semibold text-slate-900 shadow-[0_0_0_1px_rgba(252,128,25,0.14),0_10px_36px_-8px_rgba(252,128,25,0.38),0_4px_14px_-2px_rgba(15,23,42,0.08)] transition hover:bg-slate-50 active:scale-[0.99] focus:outline-none focus-visible:ring-2 focus-visible:ring-delivery-400/50"
+      >
+        {text}
+      </button>
+    ),
+    { duration: 5500 },
+  );
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -15,15 +33,22 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      const result = await res.json();
+      const result = await res.json().catch(() => ({}));
       if (result.success && result.token) {
+        toast.dismiss();
         login(result.token);
         navigate('/admin/dashboard', { replace: true });
-      } else {
-        alert('Login failed');
+        return;
       }
-    } catch (err) {
-      alert('Error');
+      const fromBody = typeof result.error === 'string' ? result.error.trim() : '';
+      const msg =
+        fromBody ||
+        (res.status === 401 ? 'Invalid credentials' : '') ||
+        (!res.ok ? `Could not sign in (${res.status})` : '') ||
+        'Sign in failed';
+      showLoginErrorToast(msg);
+    } catch {
+      showLoginErrorToast('Network error. Check your connection and try again.');
     }
   };
 

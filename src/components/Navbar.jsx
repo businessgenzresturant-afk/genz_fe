@@ -2,7 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
-import fallbackNav from '../assets/fallbackNav.json';
 import { IconCartLine, IconClose, IconMenu } from './icons.jsx';
 
 const defaultLinks = [
@@ -59,14 +58,12 @@ export default function Navbar() {
           Array.isArray(data?.links) && data.links.length
             ? data.links
             : isAdmin
-              ? fallbackNav.ownerLinks
-              : fallbackNav.links;
+              ? ownerDefaultLinks
+              : defaultLinks;
         setLinks(normalizeNavLinks(raw, isAdmin));
       })
       .catch(() =>
-        setLinks(
-          normalizeNavLinks(isAdmin ? fallbackNav.ownerLinks : fallbackNav.links, isAdmin),
-        ),
+        setLinks(normalizeNavLinks(isAdmin ? ownerDefaultLinks : defaultLinks, isAdmin)),
       );
   }, [token, isAdmin]);
 

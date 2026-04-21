@@ -4,6 +4,34 @@ import { useAuth } from '../../context/AuthContext.jsx';
 
 const inputClass = 'input-field min-h-[44px] text-base';
 
+function ymdFromDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function defaultOfferExpiryYmd() {
+  const d = new Date();
+  d.setDate(d.getDate() + 14);
+  return ymdFromDate(d);
+}
+
+/** Last moment of the chosen calendar day in the browser's local timezone (ISO string for API). */
+function endOfLocalDayIsoFromYmd(ymd) {
+  const parts = String(ymd).split('-').map((x) => parseInt(x, 10));
+  if (parts.length !== 3 || parts.some((n) => !Number.isFinite(n))) return null;
+  const [y, m, d] = parts;
+  return new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
+}
+
+function ymdFromIso(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return ymdFromDate(d);
+}
+
 export default function AdminMenu() {
   const { token } = useAuth();
   const formIds = useId();
@@ -32,11 +60,13 @@ export default function AdminMenu() {
     active: true,
     sortOrder: 0,
     couponCode: '',
-    discountPercent: '',
-    discountFlat: '',
+    discountMode: 'percent',
+    discountAmount: '',
+    expiresDate: defaultOfferExpiryYmd(),
   });
   const [offerStatus, setOfferStatus] = useState('');
   const [busyOfferId, setBusyOfferId] = useState(null);
+  const [offerExpiryDrafts, setOfferExpiryDrafts] = useState({});
 
   const loadOffers = useCallback(async () => {
     if (!token) return;
@@ -84,6 +114,14 @@ export default function AdminMenu() {
     loadOffers();
   }, [loadOffers]);
 
+  useEffect(() => {
+    const next = {};
+    for (const o of offers) {
+      if (o._id != null) next[String(o._id)] = ymdFromIso(o.expiresAt);
+    }
+    setOfferExpiryDrafts(next);
+  }, [offers]);
+
   const handleAddItem = async (e) => {
     e.preventDefault();
     setAddStatus('Saving…');
@@ -130,6 +168,30 @@ export default function AdminMenu() {
       setOfferStatus('Title is required');
       return;
     }
+    if (!offerForm.couponCode.trim()) {
+      setOfferStatus('Checkout coupon code is required');
+      return;
+    }
+    const amt = Number(offerForm.discountAmount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      setOfferStatus('Enter a discount amount greater than 0');
+      return;
+    }
+    if (offerForm.discountMode === 'percent' && amt > 100) {
+      setOfferStatus('Percent discount cannot exceed 100');
+      return;
+    }
+    if (!String(offerForm.expiresDate || '').trim()) {
+      setOfferStatus('Expiry date is required');
+      return;
+    }
+    const expiresIso = endOfLocalDayIsoFromYmd(offerForm.expiresDate);
+    if (!expiresIso) {
+      setOfferStatus('Invalid expiry date');
+      return;
+    }
+    const discountPercent = offerForm.discountMode === 'percent' ? amt : 0;
+    const discountFlat = offerForm.discountMode === 'flat' ? amt : 0;
     setOfferStatus('Saving…');
     try {
       const res = await fetch('/api/offers', {
@@ -145,8 +207,9 @@ export default function AdminMenu() {
           active: offerForm.active,
           sortOrder: Number(offerForm.sortOrder) || 0,
           couponCode: offerForm.couponCode.trim(),
-          discountPercent: offerForm.discountPercent === '' ? 0 : Number(offerForm.discountPercent),
-          discountFlat: offerForm.discountFlat === '' ? 0 : Number(offerForm.discountFlat),
+          discountPercent,
+          discountFlat,
+          expiresAt: expiresIso,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -162,8 +225,9 @@ export default function AdminMenu() {
         active: true,
         sortOrder: 0,
         couponCode: '',
-        discountPercent: '',
-        discountFlat: '',
+        discountMode: 'percent',
+        discountAmount: '',
+        expiresDate: defaultOfferExpiryYmd(),
       });
       loadOffers();
     } catch {
@@ -197,6 +261,42 @@ export default function AdminMenu() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) await loadOffers();
+    } finally {
+      setBusyOfferId(null);
+    }
+  };
+
+  const saveOfferExpiry = async (id) => {
+    const ymd = offerExpiryDrafts[String(id)] || '';
+    if (!ymd.trim()) {
+      setOfferStatus('Pick an expiry date');
+      return;
+    }
+    const iso = endOfLocalDayIsoFromYmd(ymd);
+    if (!iso) {
+      setOfferStatus('Invalid expiry date');
+      return;
+    }
+    setBusyOfferId(String(id));
+    setOfferStatus('');
+    try {
+      const res = await fetch(`/api/offers/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ expiresAt: iso }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setOfferStatus(data.error || 'Could not update expiry');
+        return;
+      }
+      setOfferStatus('Expiry updated.');
+      await loadOffers();
+    } catch {
+      setOfferStatus('Network error');
     } finally {
       setBusyOfferId(null);
     }
@@ -416,7 +516,8 @@ export default function AdminMenu() {
       <section className="panel p-6 md:p-8 mb-10 border border-amber-200/90 bg-gradient-to-br from-amber-50/50 to-white">
         <h2 className="font-display text-lg font-bold text-slate-900 mb-1">Promotional offers</h2>
         <p className="text-sm text-slate-600 mb-6 max-w-2xl">
-          Short promos shown under <strong>Specials &amp; offers</strong> on the public menu. Toggle visibility without
+          Short promos shown under <strong>Specials &amp; offers</strong> on the public menu. Each offer needs an
+          expiry; after that date it hides from the menu and the coupon stops working. Toggle visibility without
           deleting.
         </p>
         <form onSubmit={handleAddOffer} className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -458,6 +559,24 @@ export default function AdminMenu() {
             />
           </div>
           <div className="md:col-span-2">
+            <label htmlFor={`${formIds}-offer-expires`} className="block text-sm font-medium text-slate-800 mb-1.5">
+              Expires on <span className="text-rose-600">*</span>
+            </label>
+            <input
+              id={`${formIds}-offer-expires`}
+              type="date"
+              required
+              min={ymdFromDate(new Date())}
+              className={`${inputClass} max-w-xs`}
+              value={offerForm.expiresDate}
+              onChange={(e) => setOfferForm((f) => ({ ...f, expiresDate: e.target.value }))}
+            />
+            <p className="text-xs text-slate-500 mt-1.5 max-w-xl">
+              Valid through the end of this calendar day in your browser&apos;s time zone. The public menu and checkout
+              both respect this date.
+            </p>
+          </div>
+          <div className="md:col-span-2">
             <label htmlFor={`${formIds}-offer-desc`} className="block text-sm font-medium text-slate-800 mb-1.5">
               Description
             </label>
@@ -470,52 +589,68 @@ export default function AdminMenu() {
               placeholder="Terms, dates, or how the offer works"
             />
           </div>
-          <div>
+          <div className="md:col-span-2">
             <label htmlFor={`${formIds}-offer-coupon`} className="block text-sm font-medium text-slate-800 mb-1.5">
-              Checkout coupon code
+              Checkout coupon code <span className="text-rose-600">*</span>
             </label>
             <input
               id={`${formIds}-offer-coupon`}
+              required
               className={inputClass}
               value={offerForm.couponCode}
               onChange={(e) => setOfferForm((f) => ({ ...f, couponCode: e.target.value }))}
-              placeholder="e.g. GZ25 (optional)"
+              placeholder="e.g. GZ25"
               autoComplete="off"
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor={`${formIds}-offer-pct`} className="block text-sm font-medium text-slate-800 mb-1.5">
-                Discount % (subtotal)
+          <div className="md:col-span-2 space-y-3">
+            <p className="text-sm font-medium text-slate-800">
+              Discount <span className="text-rose-600">*</span>{' '}
+              <span className="font-normal text-slate-500">(choose one)</span>
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`${formIds}-offer-discount-mode`}
+                  className="text-delivery-600 border-slate-300"
+                  checked={offerForm.discountMode === 'percent'}
+                  onChange={() => setOfferForm((f) => ({ ...f, discountMode: 'percent' }))}
+                />
+                <span className="text-sm font-medium text-slate-800">Percent off subtotal</span>
               </label>
-              <input
-                id={`${formIds}-offer-pct`}
-                type="number"
-                min="0"
-                max="100"
-                className={inputClass}
-                value={offerForm.discountPercent}
-                onChange={(e) => setOfferForm((f) => ({ ...f, discountPercent: e.target.value }))}
-                placeholder="0"
-              />
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name={`${formIds}-offer-discount-mode`}
+                  className="text-delivery-600 border-slate-300"
+                  checked={offerForm.discountMode === 'flat'}
+                  onChange={() => setOfferForm((f) => ({ ...f, discountMode: 'flat' }))}
+                />
+                <span className="text-sm font-medium text-slate-800">Flat ₹ off subtotal</span>
+              </label>
             </div>
             <div>
-              <label htmlFor={`${formIds}-offer-flat`} className="block text-sm font-medium text-slate-800 mb-1.5">
-                Or flat ₹ off
+              <label htmlFor={`${formIds}-offer-discount-amt`} className="block text-sm font-medium text-slate-800 mb-1.5">
+                {offerForm.discountMode === 'percent' ? 'Percent (1–100)' : 'Amount (₹)'}
               </label>
               <input
-                id={`${formIds}-offer-flat`}
+                id={`${formIds}-offer-discount-amt`}
                 type="number"
                 min="0"
-                className={inputClass}
-                value={offerForm.discountFlat}
-                onChange={(e) => setOfferForm((f) => ({ ...f, discountFlat: e.target.value }))}
-                placeholder="0"
+                max={offerForm.discountMode === 'percent' ? '100' : undefined}
+                step={offerForm.discountMode === 'flat' ? '1' : '0.5'}
+                required
+                className={`${inputClass} max-w-xs`}
+                value={offerForm.discountAmount}
+                onChange={(e) => setOfferForm((f) => ({ ...f, discountAmount: e.target.value }))}
+                placeholder={offerForm.discountMode === 'percent' ? 'e.g. 15' : 'e.g. 50'}
               />
             </div>
           </div>
           <p className="md:col-span-2 text-xs text-slate-500">
-            If both % and flat are set, <strong>percent</strong> is used. Codes are matched at checkout (case-insensitive).
+            Coupon codes are matched at checkout (case-insensitive). Each offer uses either a percent or a flat
+            discount, not both.
           </p>
           <div className="md:col-span-2 flex flex-wrap items-center gap-6">
             <label className="flex items-center gap-2 cursor-pointer">
@@ -556,7 +691,49 @@ export default function AdminMenu() {
                         {Number(o.discountPercent) <= 0 && Number(o.discountFlat) > 0 && ` · ₹${o.discountFlat} off`}
                       </p>
                     )}
+                    {(() => {
+                      const end = o.expiresAt ? new Date(o.expiresAt) : null;
+                      const hasEnd = end && !Number.isNaN(end.getTime());
+                      const expired = hasEnd && end.getTime() <= Date.now();
+                      return (
+                        <p className={`text-xs mt-1.5 ${expired ? 'text-rose-700 font-semibold' : 'text-slate-600'}`}>
+                          {hasEnd
+                            ? `Ends: ${end.toLocaleDateString(undefined, { dateStyle: 'medium' })}${
+                                expired ? ' (expired — hidden from menu & checkout)' : ''
+                              }`
+                            : 'No expiry on file (legacy). Set a date below.'}
+                        </p>
+                      );
+                    })()}
                     <p className="text-xs text-slate-400 mt-1">Order: {o.sortOrder ?? 0}</p>
+                    <div className="mt-3 flex flex-wrap items-end gap-2">
+                      <div>
+                        <label
+                          htmlFor={`${formIds}-exp-${id}`}
+                          className="block text-[11px] font-semibold uppercase tracking-wide text-slate-500 mb-1"
+                        >
+                          Change expiry
+                        </label>
+                        <input
+                          id={`${formIds}-exp-${id}`}
+                          type="date"
+                          className={`${inputClass} min-h-[40px] text-sm max-w-[11rem]`}
+                          value={offerExpiryDrafts[String(id)] ?? ''}
+                          onChange={(e) =>
+                            setOfferExpiryDrafts((d) => ({ ...d, [String(id)]: e.target.value }))
+                          }
+                          disabled={busy}
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => saveOfferExpiry(id)}
+                        className="min-h-[40px] px-3 rounded-lg border border-amber-200 bg-white text-sm font-semibold text-delivery-900 hover:bg-amber-50/80 disabled:opacity-50"
+                      >
+                        Save expiry
+                      </button>
+                    </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 shrink-0">
                     <label className="flex items-center gap-2 cursor-pointer select-none">

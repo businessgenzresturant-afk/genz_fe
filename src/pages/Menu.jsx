@@ -4,25 +4,9 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { IconCartLine, IconCopy } from '../components/icons.jsx';
-import fallbackMenu from '../assets/fallbackMenu.json';
 
 const shell =
   'mx-auto w-full max-w-[min(1700px,95vw)] px-4 sm:px-6 md:px-8 xl:px-10 2xl:px-12';
-
-/** Local demo when /api/offers is empty or unreachable (matches hero-style banner) */
-const DEMO_PROMO_OFFERS = [
-  {
-    _id: 'local-demo-promo',
-    title: '25% OFF ALL BURGERS THIS WEEK!',
-    subtitle: 'Fresh patties · limited time',
-    description: 'Use code GZ25 at checkout.',
-    active: true,
-    sortOrder: 0,
-    couponCode: 'GZ25',
-    discountPercent: 25,
-    discountFlat: 0,
-  },
-];
 
 function extractPromoCode(text) {
   if (!text || typeof text !== 'string') return null;
@@ -30,6 +14,24 @@ function extractPromoCode(text) {
   if (explicit) return explicit[1];
   const loose = text.match(/\b([A-Z]{2,}\d{2,}|[A-Z0-9]{5,})\b/);
   return loose ? loose[1] : null;
+}
+
+/** API may return `{}` or blank rows — do not render the hero promo unless something real is shown */
+function offerHasDisplayableContent(o) {
+  if (!o || typeof o !== 'object') return false;
+  return !!(
+    String(o.title || '').trim() ||
+    String(o.subtitle || '').trim() ||
+    String(o.description || '').trim() ||
+    String(o.couponCode || '').trim()
+  );
+}
+
+function offerNotExpiredPublic(o) {
+  if (!o?.expiresAt) return true;
+  const t = new Date(o.expiresAt).getTime();
+  if (Number.isNaN(t)) return true;
+  return t > Date.now();
 }
 
 async function copyTextToClipboard(text) {
@@ -252,13 +254,13 @@ export default function Menu() {
   const [activeCategory, setActiveCategory] = useState(null);
   const [dietFilter, setDietFilter] = useState('All'); // 'All', 'Veg', 'Non-Veg'
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
-  const [usingFallbackMenu, setUsingFallbackMenu] = useState(false);
-  const [promoOffers, setPromoOffers] = useState(DEMO_PROMO_OFFERS);
+  const [promoOffers, setPromoOffers] = useState([]);
   const [featuredCodeCopied, setFeaturedCodeCopied] = useState(false);
+  const [menuLoaded, setMenuLoaded] = useState(false);
 
   const { cart, dispatch } = useCart();
   const { isAdmin } = useAuth();
-  const canOrder = !isAdmin && !usingFallbackMenu;
+  const canOrder = !isAdmin && items.length > 0;
 
   useEffect(() => {
     fetch('/api/menu')
@@ -268,24 +270,15 @@ export default function Menu() {
       })
       .then((data) => {
         const valid = Array.isArray(data) ? data : [];
-        if (valid.length === 0) {
-          setItems(fallbackMenu);
-          setUsingFallbackMenu(true);
-          const firstCat = fallbackMenu[0]?.category || 'Other';
-          setActiveCategory(firstCat);
-          return;
-        }
         setItems(valid);
-        setUsingFallbackMenu(false);
-        const firstCat = valid[0]?.category || 'Other';
+        const firstCat = valid[0]?.category?.trim() || null;
         setActiveCategory(firstCat);
       })
       .catch(() => {
-        setItems(fallbackMenu);
-        setUsingFallbackMenu(true);
-        const firstCat = fallbackMenu[0]?.category || 'Other';
-        setActiveCategory(firstCat);
-      });
+        setItems([]);
+        setActiveCategory(null);
+      })
+      .finally(() => setMenuLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -296,9 +289,9 @@ export default function Menu() {
       })
       .then((data) => {
         const list = Array.isArray(data) ? data.filter((o) => o && o.active !== false) : [];
-        setPromoOffers(list.length > 0 ? list : DEMO_PROMO_OFFERS);
+        setPromoOffers(list);
       })
-      .catch(() => setPromoOffers(DEMO_PROMO_OFFERS));
+      .catch(() => setPromoOffers([]));
   }, []);
 
   useEffect(() => {
@@ -335,30 +328,16 @@ export default function Menu() {
     return result;
   }, [items, activeCategory, dietFilter]);
 
-  const specials = useMemo(() => {
-    const demoSpecials = [
-      { _id: 'sp1', name: 'Truffle Fries', category: 'Sides', veg: true, halfPrice: 120, fullPrice: 200, isSpecial: true },
-      { _id: 'sp2', name: 'Neon Nachos', category: 'Mexican', veg: true, halfPrice: 150, fullPrice: 280, isSpecial: true },
-      { _id: 'sp3', name: 'Kimchi Bao', category: 'Asian', veg: false, halfPrice: 180, fullPrice: 320, isSpecial: true },
-      { _id: 'sp4', name: 'Avo-Toast Art', category: 'Breakfast', veg: true, halfPrice: 160, fullPrice: 290, isSpecial: true },
-      { _id: 'sp5', name: 'Galaxy Macarons', category: 'Dessert', veg: true, halfPrice: 200, fullPrice: 350, isSpecial: true },
-    ];
-    const specialItems = items.filter((item) => item.isSpecial);
-    const nameKey = (item) => String(item.name || '').trim().toLowerCase();
-
-    if (specialItems.length >= 2) return specialItems;
-    if (specialItems.length === 1) {
-      const seen = new Set(specialItems.map(nameKey));
-      const extras = demoSpecials.filter((d) => !seen.has(nameKey(d)));
-      return [...specialItems, ...extras];
-    }
-    return demoSpecials;
-  }, [items]);
+  const specials = useMemo(() => items.filter((item) => item.isSpecial), [items]);
 
   const cartCount = cart.items.reduce((s, i) => s + i.quantity, 0);
 
-  const featuredPromo = promoOffers[0];
-  const morePromos = promoOffers.slice(1);
+  const displayPromos = useMemo(
+    () => promoOffers.filter(offerHasDisplayableContent).filter(offerNotExpiredPublic),
+    [promoOffers],
+  );
+  const featuredPromo = displayPromos[0];
+  const morePromos = displayPromos.slice(1);
   const promoCode =
     featuredPromo &&
     (String(featuredPromo.couponCode || '').trim() ||
@@ -387,10 +366,9 @@ export default function Menu() {
       </div>
 
       <div className={`${shell} pt-6 relative z-10 space-y-8 md:space-y-12`}>
-        {usingFallbackMenu && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/80 backdrop-blur-sm px-4 py-3 text-sm text-amber-950 shadow-[0_20px_50px_rgba(0,0,0,0.08)]">
-            Showing demo menu from the app (API returned no data or is unreachable). Ordering is
-            disabled until the server is available.
+        {menuLoaded && items.length === 0 && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50/90 backdrop-blur-sm px-4 py-3 text-sm text-slate-700 shadow-[0_20px_50px_rgba(0,0,0,0.06)]">
+            No menu data available. Check that the API is running and the menu has been loaded in the database.
           </div>
         )}
 
@@ -431,7 +409,7 @@ export default function Menu() {
             )}
           </div>
 
-          {/* Floating Island Promotion — data from /api/offers, demo if unavailable */}
+          {/* Floating Island Promotion — from /api/offers */}
           {featuredPromo && (
             <div className="relative overflow-hidden rounded-[32px] bg-charcoal-900 text-white shadow-[0_0_40px_rgba(252,128,25,0.2)] border border-white/10 transition-transform duration-500 hover:-translate-y-1">
               
@@ -460,6 +438,15 @@ export default function Menu() {
                   {featuredPromo.subtitle ? (
                     <p className="mt-3 text-base sm:text-lg font-medium text-slate-300 leading-snug">
                       {featuredPromo.subtitle}
+                    </p>
+                  ) : null}
+                  {featuredPromo.expiresAt &&
+                  !Number.isNaN(new Date(featuredPromo.expiresAt).getTime()) ? (
+                    <p className="mt-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Valid through{' '}
+                      {new Date(featuredPromo.expiresAt).toLocaleDateString(undefined, {
+                        dateStyle: 'medium',
+                      })}
                     </p>
                   ) : null}
                   {promoCode ? (
@@ -668,6 +655,18 @@ export default function Menu() {
                     canOrder={canOrder}
                   />
                 ))}
+              </div>
+            ) : items.length === 0 ? (
+              <div className="py-20 text-center flex flex-col items-center px-4">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                  <span className="text-2xl" aria-hidden>
+                    🍽️
+                  </span>
+                </div>
+                <h4 className="text-lg font-bold text-slate-900">No menu data</h4>
+                <p className="text-slate-500 mt-1 max-w-md">
+                  Nothing to display. Connect the backend and ensure the menu endpoint returns dishes.
+                </p>
               </div>
             ) : (
               <div className="py-20 text-center flex flex-col items-center">

@@ -4,7 +4,6 @@ import io from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext.jsx';
 import NotificationPrompt from '../../components/NotificationPrompt.jsx';
 import { showNotification } from '../../utils/browserNotifications.js';
-import fallbackOrders from '../../assets/fallbackOrders.json';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://127.0.0.1:5000';
 
@@ -151,15 +150,12 @@ export default function Dashboard() {
         }
         const data = await res.json().catch(() => []);
         if (!res.ok || !Array.isArray(data)) {
-          return fallbackOrders;
-        }
-        if (data.length === 0) {
-          return fallbackOrders;
+          return [];
         }
         return data;
       })
-      .then((data) => setOrders(Array.isArray(data) ? data : fallbackOrders))
-      .catch(() => setOrders(fallbackOrders));
+      .then((data) => setOrders(Array.isArray(data) ? data : []))
+      .catch(() => setOrders([]));
 
     socketRef.current = io(SOCKET_URL);
     socketRef.current.emit('join-dashboard');
@@ -215,7 +211,7 @@ export default function Dashboard() {
         const data = await res.json().catch(() => []);
         setOrders(Array.isArray(data) ? data : []);
       } catch {
-        setOrders((prev) => prev.filter((o) => o.readOnly === true));
+        setOrders([]);
       }
       setSelectedIds(new Set());
     });
@@ -319,7 +315,7 @@ export default function Dashboard() {
   const deleteAllOrders = async () => {
     if (
       !window.confirm(
-        'Delete every order in the database? This cannot be undone. If the store is empty afterwards, the dashboard may show bundled demo orders until real orders arrive.',
+        'Delete every order in the database? This cannot be undone.',
       )
     ) {
       return;
@@ -366,9 +362,6 @@ export default function Dashboard() {
     (sum, o) => sum + (Number(o.total) || 0),
     0
   );
-
-  const showingOrderFallback =
-    orders.length > 0 && orders.every((o) => o.readOnly === true);
 
   const filteredOrders = useMemo(() => {
     let list = orders;
@@ -425,7 +418,7 @@ export default function Dashboard() {
               type="button"
               onClick={deleteSelected}
               disabled={
-                deleteBusy || selectedIds.size === 0 || showingOrderFallback
+                deleteBusy || selectedIds.size === 0
               }
               className="inline-flex min-h-[40px] items-center rounded-xl border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-800 hover:bg-rose-100 disabled:opacity-50"
             >
@@ -434,7 +427,7 @@ export default function Dashboard() {
             <button
               type="button"
               onClick={deleteAllOrders}
-              disabled={deleteBusy || showingOrderFallback}
+              disabled={deleteBusy}
               className="inline-flex min-h-[40px] items-center rounded-xl border border-rose-300 bg-white px-4 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
             >
               Delete all orders
@@ -451,13 +444,6 @@ export default function Dashboard() {
         </div>
 
         <NotificationPrompt description="Get desktop alerts when new orders arrive and when any order status changes." />
-
-        {showingOrderFallback && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-            Showing demo orders from bundled data — the API returned no orders or could not be
-            reached. Status actions are disabled until live orders load.
-          </div>
-        )}
 
         {/* STATS */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -502,10 +488,7 @@ export default function Dashboard() {
                   <span className="text-slate-400"> of {orders.length}</span>
                 )}
               </p>
-              {!showingOrderFallback &&
-                filteredOrders.some(
-                  (o) => !o.readOnly && isLiveOrderId(String(o._id)),
-                ) && (
+              {filteredOrders.some((o) => !o.readOnly && isLiveOrderId(String(o._id))) && (
                   <div className="flex flex-wrap justify-end gap-2">
                     <button
                       type="button"

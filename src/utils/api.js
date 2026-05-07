@@ -20,7 +20,20 @@ const RAW_API_BASE_URL = readFirstEnv([
   'BACKEND_URL',
 ]);
 
-const API_BASE_URL = normalizeBaseUrl(RAW_API_BASE_URL);
+const RAW_FALLBACK_BASE_URL = readFirstEnv(['VITE_API_PROXY']);
+
+const ENV_API_BASE_URL = normalizeBaseUrl(RAW_API_BASE_URL);
+const ENV_FALLBACK_BASE_URL = normalizeBaseUrl(RAW_FALLBACK_BASE_URL);
+
+function resolveApiBaseUrl() {
+  if (typeof window === 'undefined') return ENV_API_BASE_URL || ENV_FALLBACK_BASE_URL || '';
+  const origin = window.location.origin.replace(/\/+$/, '');
+  if (ENV_API_BASE_URL && ENV_API_BASE_URL !== origin) return ENV_API_BASE_URL;
+  if (ENV_FALLBACK_BASE_URL && ENV_FALLBACK_BASE_URL !== origin) return ENV_FALLBACK_BASE_URL;
+  return ENV_API_BASE_URL || ENV_FALLBACK_BASE_URL || '';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export function apiUrl(path) {
   if (!path) return API_BASE_URL || '';

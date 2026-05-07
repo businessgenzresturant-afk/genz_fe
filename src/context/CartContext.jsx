@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useState, useCallback } from 'react';
 import { useSession } from './SessionContext.jsx';
 import { useAuth } from './AuthContext.jsx';
+import { apiClient } from '../utils/api.js';
 
 const CartContext = createContext();
 
@@ -107,9 +108,8 @@ export const CartProvider = ({ children }) => {
         }
       } else {
         try {
-          const res = await fetch(`/api/sessions/${sessionId}`);
-          if (res.ok && !isAdmin) {
-            const data = await res.json();
+          const { data } = await apiClient.get(`/api/sessions/${sessionId}`);
+          if (!isAdmin) {
             if (data.cart?.items?.length) {
               dispatch({ type: 'LOAD_CART', payload: data.cart });
             }
@@ -134,11 +134,7 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     if (!sessionId || !storageReady || isAdmin) return undefined;
     const t = setTimeout(() => {
-      fetch(`/api/sessions/${sessionId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cart }),
-      }).catch(() => {});
+      apiClient.put(`/api/sessions/${sessionId}`, { cart }).catch(() => {});
     }, 900);
     return () => clearTimeout(t);
   }, [cart, sessionId, storageReady, isAdmin]);

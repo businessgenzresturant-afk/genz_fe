@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useSession } from '../context/SessionContext.jsx';
+import { apiClient } from '../utils/api.js';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -23,8 +24,9 @@ export default function Checkout() {
 
   useEffect(() => {
     if (!sessionId) return;
-    fetch(`/api/sessions/${sessionId}`)
-      .then((r) => (r.ok ? r.json() : null))
+    apiClient
+      .get(`/api/sessions/${sessionId}`)
+      .then(({ data }) => data)
       .then((data) => {
         if (!data?.checkout) return;
         const c = data.checkout;
@@ -39,8 +41,9 @@ export default function Checkout() {
   }, [sessionId]);
 
   useEffect(() => {
-    fetch('/api/settings/checkout')
-      .then((r) => (r.ok ? r.json() : null))
+    apiClient
+      .get('/api/settings/checkout')
+      .then(({ data }) => data)
       .then((data) => {
         if (!data) return;
         setPaySettings({
@@ -62,12 +65,10 @@ export default function Checkout() {
       setCouponBusy(true);
       setCouponError('');
       try {
-        const res = await fetch('/api/offers/validate-coupon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ code: trimmed, subtotal: subtotalAmount }),
+        const { data } = await apiClient.post('/api/offers/validate-coupon', {
+          code: trimmed,
+          subtotal: subtotalAmount,
         });
-        const data = await res.json().catch(() => ({}));
         if (data.valid) {
           setAppliedCoupon({
             code: data.couponCode,
@@ -92,10 +93,8 @@ export default function Checkout() {
   useEffect(() => {
     if (!sessionId || !storageReady) return undefined;
     const t = setTimeout(() => {
-      fetch(`/api/sessions/${sessionId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      apiClient
+        .put(`/api/sessions/${sessionId}`, {
           checkout: {
             name,
             phone,
@@ -104,8 +103,8 @@ export default function Checkout() {
             paymentMethod: payment,
             couponCode: appliedCoupon?.code || couponInput || '',
           },
-        }),
-      }).catch(() => {});
+        })
+        .catch(() => {});
     }, 650);
     return () => clearTimeout(t);
   }, [
@@ -158,10 +157,7 @@ export default function Checkout() {
     }
     setSubmitting(true);
     try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const { data } = await apiClient.post('/api/orders', {
           customer: {
             name: name.trim(),
             phone: phone.trim(),
@@ -181,38 +177,28 @@ export default function Checkout() {
           sessionId,
           zone: 'Zone 1 (0-3km)',
           couponCode: appliedCoupon?.code || '',
-        }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setError(
-          data.error ||
-            (data.serverTotal != null
-              ? `Total mismatch — expected ₹${data.serverTotal}. Refresh and try again.`
-              : 'Could not place order.'),
-        );
-        return;
-      }
       if (data.success && data.orderNo) {
         dispatch({ type: 'CLEAR_CART' });
         if (sessionId) {
-          await fetch(`/api/sessions/${sessionId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          await apiClient.put(`/api/sessions/${sessionId}`, {
               cart: { items: [], total: 0 },
               checkout: { couponCode: '' },
-            }),
-          }).catch(() => {});
+            })
+            .catch(() => {});
         }
         navigate(
           `/track?order=${encodeURIComponent(data.orderNo)}&id=${encodeURIComponent(data.orderId)}`,
         );
-      } else {
-        setError(data.error || 'Could not place order.');
-      }
-    } catch {
-      setError('Network error. Try again.');
+      } else setError(data.error || 'Could not place order.');
+    } catch (err) {
+      const data = err?.response?.data;
+      setError(
+        data?.error ||
+          (data?.serverTotal != null
+            ? `Total mismatch — expected ₹${data.serverTotal}. Refresh and try again.`
+            : 'Network error. Try again.'),
+      );
     } finally {
       setSubmitting(false);
     }

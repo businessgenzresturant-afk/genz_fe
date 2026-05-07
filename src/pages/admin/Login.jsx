@@ -1,6 +1,7 @@
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { apiClient } from '../../utils/api.js';
 
 /** No fixed `id` — same id makes react-hot-toast replace the toast instead of stacking. */
 function showLoginErrorToast(message) {
@@ -28,27 +29,24 @@ export default function Login() {
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await res.json().catch(() => ({}));
+      const { data: result } = await apiClient.post('/api/admin/login', data);
       if (result.success && result.token) {
         toast.dismiss();
         login(result.token);
         navigate('/admin/dashboard', { replace: true });
         return;
       }
-      const fromBody = typeof result.error === 'string' ? result.error.trim() : '';
+      showLoginErrorToast('Sign in failed');
+    } catch (err) {
+      const status = err?.response?.status;
+      const body = err?.response?.data;
+      const fromBody = typeof body?.error === 'string' ? body.error.trim() : '';
       const msg =
         fromBody ||
-        (res.status === 401 ? 'Invalid credentials' : '') ||
-        (!res.ok ? `Could not sign in (${res.status})` : '') ||
-        'Sign in failed';
+        (status === 401 ? 'Invalid credentials' : '') ||
+        (status ? `Could not sign in (${status})` : '') ||
+        'Network error. Check your connection and try again.';
       showLoginErrorToast(msg);
-    } catch {
-      showLoginErrorToast('Network error. Check your connection and try again.');
     }
   };
 

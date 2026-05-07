@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { IconCartLine, IconClose, IconMenu } from './icons.jsx';
+import { apiClient } from '../utils/api.js';
 
 const defaultLinks = [
   { to: '/home', label: 'Home' },
@@ -48,11 +49,9 @@ export default function Navbar() {
     if (token) {
       headers.Authorization = `Bearer ${token}`;
     }
-    fetch('/api/nav', { headers })
-      .then((res) => {
-        if (!res.ok) throw new Error('nav');
-        return res.json();
-      })
+    apiClient
+      .get('/api/nav', { headers })
+      .then(({ data }) => data)
       .then((data) => {
         const raw =
           Array.isArray(data?.links) && data.links.length

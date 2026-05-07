@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { apiClient } from '../../utils/api.js';
 
 const inputClass = 'input-field min-h-[44px] text-base w-full max-w-lg';
 
@@ -17,12 +18,9 @@ export default function AdminPayment() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/settings/checkout');
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setUpiId(typeof data.upiId === 'string' ? data.upiId : '');
-        setQrUrl(data.qrUrl || null);
-      }
+      const { data } = await apiClient.get('/api/settings/checkout');
+      setUpiId(typeof data.upiId === 'string' ? data.upiId : '');
+      setQrUrl(data.qrUrl || null);
     } finally {
       setLoading(false);
     }
@@ -38,24 +36,16 @@ export default function AdminPayment() {
     setSaveStatus('Saving…');
     setBusy(true);
     try {
-      const res = await fetch('/api/settings/checkout', {
-        method: 'PATCH',
+      const { data } = await apiClient.patch('/api/settings/checkout', { upiId }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ upiId }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setSaveStatus(data.error || 'Could not save');
-        return;
-      }
       setUpiId(data.upiId ?? '');
       setQrUrl(data.qrUrl ?? null);
       setSaveStatus('Saved.');
-    } catch {
-      setSaveStatus('Network error');
+    } catch (err) {
+      setSaveStatus(err?.response?.data?.error || 'Network error');
     } finally {
       setBusy(false);
     }
@@ -70,22 +60,15 @@ export default function AdminPayment() {
     try {
       const fd = new FormData();
       fd.append('qr', file);
-      const res = await fetch('/api/settings/checkout/qr', {
-        method: 'POST',
+      const { data } = await apiClient.post('/api/settings/checkout/qr', fd, {
         headers: { Authorization: `Bearer ${token}` },
-        body: fd,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setUploadStatus(data.error || 'Upload failed');
-        return;
-      }
       setQrUrl(data.qrUrl || null);
       setQrPreviewBust(Date.now());
       setUploadStatus('QR saved to frontend/public/assets.');
       await load();
-    } catch {
-      setUploadStatus('Network error');
+    } catch (err) {
+      setUploadStatus(err?.response?.data?.error || 'Network error');
     } finally {
       setBusy(false);
     }
@@ -97,21 +80,15 @@ export default function AdminPayment() {
     setUploadStatus('Removing…');
     setBusy(true);
     try {
-      const res = await fetch('/api/settings/checkout/qr', {
-        method: 'DELETE',
+      await apiClient.delete('/api/settings/checkout/qr', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setUploadStatus(data.error || 'Could not remove');
-        return;
-      }
       setQrUrl(null);
       setQrPreviewBust(0);
       setUploadStatus('QR removed.');
       await load();
-    } catch {
-      setUploadStatus('Network error');
+    } catch (err) {
+      setUploadStatus(err?.response?.data?.error || 'Network error');
     } finally {
       setBusy(false);
     }

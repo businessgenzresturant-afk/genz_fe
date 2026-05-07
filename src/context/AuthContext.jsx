@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { apiClient } from '../utils/api.js';
 
 const AuthContext = createContext(null);
 
@@ -15,10 +16,9 @@ export function AuthProvider({ children }) {
         setIsAdmin(false);
         return;
       }
-      const res = await fetch('/api/admin/me', {
+      const { data } = await apiClient.get('/api/admin/me', {
         headers: { Authorization: `Bearer ${t}` },
       });
-      const data = await res.json();
       setIsAdmin(!!data.admin);
     } catch {
       setIsAdmin(false);

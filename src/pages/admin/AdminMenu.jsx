@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useId, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { apiClient } from '../../utils/api.js';
 
 const inputClass = 'input-field min-h-[44px] text-base';
 
@@ -71,12 +72,11 @@ export default function AdminMenu() {
   const loadOffers = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await fetch('/api/offers/admin', {
+      const res = await apiClient.get('/api/offers/admin', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok && Array.isArray(data.offers)) {
-        setOffers(data.offers);
+      if (Array.isArray(res.data?.offers)) {
+        setOffers(res.data.offers);
       } else {
         setOffers([]);
       }
@@ -89,11 +89,11 @@ export default function AdminMenu() {
     if (!token) return;
     setLoading(true);
     try {
-      const res = await fetch('/api/menu/admin', {
+      const res = await apiClient.get('/api/menu/admin', {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
-      if (res.ok && data.items) {
+      const data = res.data;
+      if (data.items) {
         setItems(data.items);
         setCalendarDay(data.calendarDay || '');
       } else {
@@ -126,27 +126,19 @@ export default function AdminMenu() {
     e.preventDefault();
     setAddStatus('Saving…');
     try {
-      const res = await fetch('/api/menu', {
-        method: 'POST',
+      await apiClient.post('/api/menu', {
+        name: addForm.name.trim(),
+        category: addForm.category.trim(),
+        veg: addForm.veg,
+        halfPrice: Number(addForm.halfPrice),
+        fullPrice: Number(addForm.fullPrice),
+        isSpecial: addForm.isSpecial,
+        available: true,
+      }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: addForm.name.trim(),
-          category: addForm.category.trim(),
-          veg: addForm.veg,
-          halfPrice: Number(addForm.halfPrice),
-          fullPrice: Number(addForm.fullPrice),
-          isSpecial: addForm.isSpecial,
-          available: true,
-        }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setAddStatus(data.error || 'Could not add item');
-        return;
-      }
       setAddStatus('Added.');
       setAddForm({
         name: '',
@@ -157,8 +149,8 @@ export default function AdminMenu() {
         isSpecial: false,
       });
       load();
-    } catch {
-      setAddStatus('Network error');
+    } catch (err) {
+      setAddStatus(err?.response?.data?.error || 'Network error');
     }
   };
 
@@ -194,29 +186,21 @@ export default function AdminMenu() {
     const discountFlat = offerForm.discountMode === 'flat' ? amt : 0;
     setOfferStatus('Saving…');
     try {
-      const res = await fetch('/api/offers', {
-        method: 'POST',
+      await apiClient.post('/api/offers', {
+        title: offerForm.title.trim(),
+        subtitle: offerForm.subtitle.trim(),
+        description: offerForm.description.trim(),
+        active: offerForm.active,
+        sortOrder: Number(offerForm.sortOrder) || 0,
+        couponCode: offerForm.couponCode.trim(),
+        discountPercent,
+        discountFlat,
+        expiresAt: expiresIso,
+      }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          title: offerForm.title.trim(),
-          subtitle: offerForm.subtitle.trim(),
-          description: offerForm.description.trim(),
-          active: offerForm.active,
-          sortOrder: Number(offerForm.sortOrder) || 0,
-          couponCode: offerForm.couponCode.trim(),
-          discountPercent,
-          discountFlat,
-          expiresAt: expiresIso,
-        }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setOfferStatus(data.error || 'Could not save offer');
-        return;
-      }
       setOfferStatus('Offer added.');
       setOfferForm({
         title: '',
@@ -230,23 +214,20 @@ export default function AdminMenu() {
         expiresDate: defaultOfferExpiryYmd(),
       });
       loadOffers();
-    } catch {
-      setOfferStatus('Network error');
+    } catch (err) {
+      setOfferStatus(err?.response?.data?.error || 'Network error');
     }
   };
 
   const toggleOfferActive = async (id, active) => {
     setBusyOfferId(String(id));
     try {
-      const res = await fetch(`/api/offers/${id}`, {
-        method: 'PATCH',
+      await apiClient.patch(`/api/offers/${id}`, { active: !active }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ active: !active }),
       });
-      if (res.ok) await loadOffers();
+      await loadOffers();
     } finally {
       setBusyOfferId(null);
     }
@@ -256,11 +237,10 @@ export default function AdminMenu() {
     if (!window.confirm('Remove this offer from the public menu?')) return;
     setBusyOfferId(String(id));
     try {
-      const res = await fetch(`/api/offers/${id}`, {
-        method: 'DELETE',
+      await apiClient.delete(`/api/offers/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) await loadOffers();
+      await loadOffers();
     } finally {
       setBusyOfferId(null);
     }
@@ -280,23 +260,15 @@ export default function AdminMenu() {
     setBusyOfferId(String(id));
     setOfferStatus('');
     try {
-      const res = await fetch(`/api/offers/${id}`, {
-        method: 'PATCH',
+      await apiClient.patch(`/api/offers/${id}`, { expiresAt: iso }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ expiresAt: iso }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setOfferStatus(data.error || 'Could not update expiry');
-        return;
-      }
       setOfferStatus('Expiry updated.');
       await loadOffers();
-    } catch {
-      setOfferStatus('Network error');
+    } catch (err) {
+      setOfferStatus(err?.response?.data?.error || 'Network error');
     } finally {
       setBusyOfferId(null);
     }
@@ -305,17 +277,12 @@ export default function AdminMenu() {
   const setServingToday = async (id, availableToday) => {
     setBusyId(String(id));
     try {
-      const res = await fetch(`/api/menu/${id}/serving-today`, {
-        method: 'PATCH',
+      await apiClient.patch(`/api/menu/${id}/serving-today`, { unavailableToday: !availableToday }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ unavailableToday: !availableToday }),
       });
-      if (res.ok) {
-        await load();
-      }
+      await load();
     } finally {
       setBusyId(null);
     }
@@ -346,31 +313,23 @@ export default function AdminMenu() {
     if (!editingId || !editForm) return;
     setEditStatus('Saving…');
     try {
-      const res = await fetch(`/api/menu/${editingId}`, {
-        method: 'PATCH',
+      await apiClient.patch(`/api/menu/${editingId}`, {
+        name: editForm.name.trim(),
+        category: editForm.category.trim(),
+        halfPrice: Number(editForm.halfPrice),
+        fullPrice: Number(editForm.fullPrice),
+        veg: editForm.veg,
+        isSpecial: editForm.isSpecial,
+        available: editForm.available,
+      }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name: editForm.name.trim(),
-          category: editForm.category.trim(),
-          halfPrice: Number(editForm.halfPrice),
-          fullPrice: Number(editForm.fullPrice),
-          veg: editForm.veg,
-          isSpecial: editForm.isSpecial,
-          available: editForm.available,
-        }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        setEditStatus(data.error || 'Could not save');
-        return;
-      }
       cancelEdit();
       await load();
-    } catch {
-      setEditStatus('Network error');
+    } catch (err) {
+      setEditStatus(err?.response?.data?.error || 'Network error');
     }
   };
 

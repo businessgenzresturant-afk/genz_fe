@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import NotificationPrompt from '../components/NotificationPrompt.jsx';
 import { showNotification } from '../utils/browserNotifications.js';
+import { apiClient } from '../utils/api.js';
 import {
   addTrackOrderToHistory,
   listTrackOrderHistory,
@@ -113,10 +114,6 @@ export default function OrderTrack() {
     setOrder(null);
     setError('');
 
-    const trackUrl = trackId
-      ? `/api/orders/track?id=${encodeURIComponent(trackId)}`
-      : `/api/orders/track?orderNo=${encodeURIComponent(urlOrderNo)}`;
-
     socketRef.current = io(SOCKET_URL, { transports: ['websocket', 'polling'] });
     socketRef.current.emit('join-order', {
       ...(trackId && { orderId: trackId }),
@@ -140,15 +137,11 @@ export default function OrderTrack() {
       setOrder((prev) => ({ ...prev, ...payload }));
     });
 
-    fetch(trackUrl)
-      .then((res) => {
-        if (res.status === 404) {
-          removeTrackOrderFromHistory({ id: trackId || undefined, orderNo: urlOrderNo || undefined });
-          throw new Error('Order not found');
-        }
-        if (!res.ok) throw new Error('Order not found');
-        return res.json();
-      })
+    const params = trackId ? { id: trackId } : { orderNo: urlOrderNo };
+
+    apiClient
+      .get('/api/orders/track', { params })
+      .then(({ data }) => data)
       .then((data) => {
         if (data.orderNo && data._id != null) {
           addTrackOrderToHistory({ orderNo: data.orderNo, id: String(data._id) });
@@ -160,7 +153,12 @@ export default function OrderTrack() {
           orderId: data._id != null ? String(data._id) : undefined,
         });
       })
-      .catch(() => setError('We could not load this order. Check the link or try again later.'))
+      .catch((err) => {
+        if (err?.response?.status === 404) {
+          removeTrackOrderFromHistory({ id: trackId || undefined, orderNo: urlOrderNo || undefined });
+        }
+        setError('We could not load this order. Check the link or try again later.');
+      })
       .finally(() => setLoading(false));
 
     return () => {

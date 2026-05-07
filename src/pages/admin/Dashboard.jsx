@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 import { useAuth } from '../../context/AuthContext.jsx';
 import NotificationPrompt from '../../components/NotificationPrompt.jsx';
 import { showNotification } from '../../utils/browserNotifications.js';
+import { apiClient } from '../../utils/api.js';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://127.0.0.1:5000';
 
@@ -141,19 +142,11 @@ export default function Dashboard() {
       return;
     }
 
-    fetch('/api/orders', {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(async (res) => {
-        if (res.status === 401 || res.status === 403) {
-          return [];
-        }
-        const data = await res.json().catch(() => []);
-        if (!res.ok || !Array.isArray(data)) {
-          return [];
-        }
-        return data;
+    apiClient
+      .get('/api/orders', {
+        headers: { Authorization: `Bearer ${token}` },
       })
+      .then(({ data }) => (Array.isArray(data) ? data : []))
       .then((data) => setOrders(Array.isArray(data) ? data : []))
       .catch(() => setOrders([]));
 
@@ -205,11 +198,10 @@ export default function Dashboard() {
 
     socketRef.current.on('orders-bulk-deleted', async () => {
       try {
-        const res = await fetch('/api/orders', {
+        const res = await apiClient.get('/api/orders', {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json().catch(() => []);
-        setOrders(Array.isArray(data) ? data : []);
+        setOrders(Array.isArray(res.data) ? res.data : []);
       } catch {
         setOrders([]);
       }
@@ -223,17 +215,12 @@ export default function Dashboard() {
     setBusyId(String(orderId));
 
     try {
-      const res = await fetch(`/api/orders/${orderId}/status`, {
-        method: 'PUT',
+      const res = await apiClient.put(`/api/orders/${orderId}/status`, { status }, {
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status }),
       });
-
-      const data = await res.json();
-      if (res.ok) mergeOrder(data);
+      mergeOrder(res.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -245,23 +232,20 @@ export default function Dashboard() {
     setExportBusy(true);
     const filename = `genz-orders-${new Date().toISOString().slice(0, 10)}.csv`;
     try {
-      const res = await fetch('/api/orders/export/csv', {
+      const res = await apiClient.get('/api/orders/export/csv', {
         headers: { Authorization: `Bearer ${token}` },
+        responseType: 'blob',
       });
-      if (res.ok) {
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        return;
-      }
-      triggerCsvDownload(buildCsvFromOrders(orders), filename);
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      return;
     } catch (e) {
       console.error(e);
       triggerCsvDownload(buildCsvFromOrders(orders), filename);
@@ -275,18 +259,15 @@ export default function Dashboard() {
     if (!window.confirm('Delete this order permanently?')) return;
     setBusyId(String(orderId));
     try {
-      const res = await fetch(`/api/orders/${orderId}`, {
-        method: 'DELETE',
+      await apiClient.delete(`/api/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) {
-        setOrders((prev) => prev.filter((o) => String(o._id) !== String(orderId)));
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(String(orderId));
-          return next;
-        });
-      }
+      setOrders((prev) => prev.filter((o) => String(o._id) !== String(orderId)));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(String(orderId));
+        return next;
+      });
     } finally {
       setBusyId(null);
     }
@@ -298,15 +279,11 @@ export default function Dashboard() {
     if (!window.confirm(`Delete ${ids.length} order(s) permanently? This cannot be undone.`)) return;
     setDeleteBusy(true);
     try {
-      const res = await fetch('/api/orders/bulk-delete', {
-        method: 'POST',
+      await apiClient.post('/api/orders/bulk-delete', { ids }, {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ ids }),
       });
-      if (res.ok) {
-        setOrders((prev) => prev.filter((o) => !ids.includes(String(o._id))));
-        setSelectedIds(new Set());
-      }
+      setOrders((prev) => prev.filter((o) => !ids.includes(String(o._id))));
+      setSelectedIds(new Set());
     } finally {
       setDeleteBusy(false);
     }
@@ -325,19 +302,14 @@ export default function Dashboard() {
     }
     setDeleteBusy(true);
     try {
-      const res = await fetch('/api/orders/bulk-delete', {
-        method: 'POST',
+      await apiClient.post('/api/orders/bulk-delete', { deleteAll: true, confirm: 'DELETE_ALL_ORDERS' }, {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ deleteAll: true, confirm: 'DELETE_ALL_ORDERS' }),
       });
-      if (res.ok) {
-        const refresh = await fetch('/api/orders', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await refresh.json().catch(() => []);
-        setOrders(Array.isArray(data) ? data : []);
-        setSelectedIds(new Set());
-      }
+      const refresh = await apiClient.get('/api/orders', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setOrders(Array.isArray(refresh.data) ? refresh.data : []);
+      setSelectedIds(new Set());
     } finally {
       setDeleteBusy(false);
     }

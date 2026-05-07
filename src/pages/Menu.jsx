@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { IconCartLine, IconCopy } from '../components/icons.jsx';
+import { apiClient } from '../utils/api.js';
 
 const shell =
   'mx-auto w-full max-w-[min(1700px,95vw)] px-4 sm:px-6 md:px-8 xl:px-10 2xl:px-12';
@@ -263,11 +264,9 @@ export default function Menu() {
   const canOrder = !isAdmin && items.length > 0;
 
   useEffect(() => {
-    fetch('/api/menu')
-      .then((res) => {
-        if (!res.ok) throw new Error('Menu unavailable');
-        return res.json();
-      })
+    apiClient
+      .get('/api/menu')
+      .then(({ data }) => data)
       .then((data) => {
         const valid = Array.isArray(data) ? data : [];
         setItems(valid);
@@ -282,11 +281,9 @@ export default function Menu() {
   }, []);
 
   useEffect(() => {
-    fetch('/api/offers')
-      .then((res) => {
-        if (!res.ok) throw new Error('Offers unavailable');
-        return res.json();
-      })
+    apiClient
+      .get('/api/offers')
+      .then(({ data }) => data)
       .then((data) => {
         const list = Array.isArray(data) ? data.filter((o) => o && o.active !== false) : [];
         setPromoOffers(list);

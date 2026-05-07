@@ -1,8 +1,26 @@
 import axios from 'axios';
 
-const RAW_API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').trim();
+function readFirstEnv(keys) {
+  for (const key of keys) {
+    const value = import.meta.env?.[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+  return '';
+}
 
-const API_BASE_URL = RAW_API_BASE_URL.replace(/\/+$/, '');
+function normalizeBaseUrl(raw) {
+  if (!raw) return '';
+  return String(raw).trim().replace(/^['"]|['"]$/g, '').replace(/\/+$/, '');
+}
+
+const RAW_API_BASE_URL = readFirstEnv([
+  'VITE_API_BASE_URL',
+  'VITE_BACKEND_URL',
+  'API_BASE_URL',
+  'BACKEND_URL',
+]);
+
+const API_BASE_URL = normalizeBaseUrl(RAW_API_BASE_URL);
 
 export function apiUrl(path) {
   if (!path) return API_BASE_URL || '';

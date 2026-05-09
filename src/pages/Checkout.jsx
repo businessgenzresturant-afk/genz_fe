@@ -1,27 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useCart } from '../context/CartContext.jsx';
-import { useSession } from '../context/SessionContext.jsx';
-import { apiClient } from '../utils/api.js';
-import { getDeliveryCharge } from '../utils/deliveryCharge.js';
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useCart } from "../context/CartContext.jsx";
+import { useSession } from "../context/SessionContext.jsx";
+import { apiClient } from "../utils/api.js";
+import { getDeliveryCharge } from "../utils/deliveryCharge.js";
 
 export default function Checkout() {
   const navigate = useNavigate();
   const { cart, dispatch, storageReady } = useCart();
   const { sessionId } = useSession();
 
-  const [orderType, setOrderType] = useState('delivery');
-  const [payment, setPayment] = useState('COD');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [couponInput, setCouponInput] = useState('');
+  const [orderType, setOrderType] = useState("delivery");
+  const [payment, setPayment] = useState("COD");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponBusy, setCouponBusy] = useState(false);
-  const [couponError, setCouponError] = useState('');
+  const [couponError, setCouponError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [paySettings, setPaySettings] = useState({ upiId: '', qrUrl: null });
+  const [error, setError] = useState("");
+  const [paySettings, setPaySettings] = useState({ upiId: "", qrUrl: null });
 
   useEffect(() => {
     if (!sessionId) return;
@@ -34,62 +34,62 @@ export default function Checkout() {
         if (c.name) setName(c.name);
         if (c.phone) setPhone(c.phone);
         if (c.address) setAddress(c.address);
-        if (c.orderType === 'takeaway' || c.orderType === 'delivery') setOrderType(c.orderType);
-        if (c.paymentMethod === 'UPI' || c.paymentMethod === 'COD') setPayment(c.paymentMethod);
-        if (c.couponCode && typeof c.couponCode === 'string') setCouponInput(c.couponCode);
+        if (c.orderType === "takeaway" || c.orderType === "delivery")
+          setOrderType(c.orderType);
+        if (c.paymentMethod === "UPI" || c.paymentMethod === "COD")
+          setPayment(c.paymentMethod);
+        if (c.couponCode && typeof c.couponCode === "string")
+          setCouponInput(c.couponCode);
       })
       .catch(() => {});
   }, [sessionId]);
 
   useEffect(() => {
     apiClient
-      .get('/api/settings/checkout')
+      .get("/api/settings/checkout")
       .then(({ data }) => data)
       .then((data) => {
         if (!data) return;
         setPaySettings({
-          upiId: typeof data.upiId === 'string' ? data.upiId : '',
+          upiId: typeof data.upiId === "string" ? data.upiId : "",
           qrUrl: data.qrUrl || null,
         });
       })
       .catch(() => {});
   }, []);
 
-  const validateAndApplyCoupon = useCallback(
-    async (code, subtotalAmount) => {
-      const trimmed = String(code || '').trim();
-      if (!trimmed) {
-        setAppliedCoupon(null);
-        setCouponError('');
-        return;
-      }
-      setCouponBusy(true);
-      setCouponError('');
-      try {
-        const { data } = await apiClient.post('/api/offers/validate-coupon', {
-          code: trimmed,
-          subtotal: subtotalAmount,
+  const validateAndApplyCoupon = useCallback(async (code, subtotalAmount) => {
+    const trimmed = String(code || "").trim();
+    if (!trimmed) {
+      setAppliedCoupon(null);
+      setCouponError("");
+      return;
+    }
+    setCouponBusy(true);
+    setCouponError("");
+    try {
+      const { data } = await apiClient.post("/api/offers/validate-coupon", {
+        code: trimmed,
+        subtotal: subtotalAmount,
+      });
+      if (data.valid) {
+        setAppliedCoupon({
+          code: data.couponCode,
+          discountAmount: data.discountAmount,
+          title: data.title,
         });
-        if (data.valid) {
-          setAppliedCoupon({
-            code: data.couponCode,
-            discountAmount: data.discountAmount,
-            title: data.title,
-          });
-          setCouponInput(data.couponCode);
-        } else {
-          setAppliedCoupon(null);
-          setCouponError(data.message || 'Invalid code');
-        }
-      } catch {
+        setCouponInput(data.couponCode);
+      } else {
         setAppliedCoupon(null);
-        setCouponError('Could not validate coupon');
-      } finally {
-        setCouponBusy(false);
+        setCouponError(data.message || "Invalid code");
       }
-    },
-    [],
-  );
+    } catch {
+      setAppliedCoupon(null);
+      setCouponError("Could not validate coupon");
+    } finally {
+      setCouponBusy(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (!sessionId || !storageReady) return undefined;
@@ -102,7 +102,7 @@ export default function Checkout() {
             address,
             orderType,
             paymentMethod: payment,
-            couponCode: appliedCoupon?.code || couponInput || '',
+            couponCode: appliedCoupon?.code || couponInput || "",
           },
         })
         .catch(() => {});
@@ -121,15 +121,19 @@ export default function Checkout() {
   ]);
 
   const subtotal = cart.total;
-  const discountAmount = appliedCoupon ? Math.min(appliedCoupon.discountAmount, subtotal) : 0;
+  const discountAmount = appliedCoupon
+    ? Math.min(appliedCoupon.discountAmount, subtotal)
+    : 0;
   const afterDiscount = Math.max(0, subtotal - discountAmount);
   // GST excluded from totals (was: Math.round(afterDiscount * 0.05))
   const tax = 0;
   const delivery = getDeliveryCharge(orderType, afterDiscount);
   const grandTotal = afterDiscount + tax + delivery;
 
-  const hasUpiDetails =
-    !!(paySettings.qrUrl || (typeof paySettings.upiId === 'string' && paySettings.upiId.trim()));
+  const hasUpiDetails = !!(
+    paySettings.qrUrl ||
+    (typeof paySettings.upiId === "string" && paySettings.upiId.trim())
+  );
 
   useEffect(() => {
     if (!appliedCoupon?.code) return undefined;
@@ -144,62 +148,63 @@ export default function Checkout() {
   }, [cart.total, appliedCoupon?.code, validateAndApplyCoupon]);
 
   const placeOrder = async () => {
-    setError('');
+    setError("");
     if (!name.trim() || !phone.trim()) {
-      setError('Please enter your name and phone.');
+      setError("Please enter your name and phone.");
       return;
     }
-    if (orderType === 'delivery' && !address.trim()) {
-      setError('Delivery address is required for delivery orders.');
+    if (orderType === "delivery" && !address.trim()) {
+      setError("Delivery address is required for delivery orders.");
       return;
     }
     if (!cart.items.length) {
-      setError('Your cart is empty.');
+      setError("Your cart is empty.");
       return;
     }
     setSubmitting(true);
     try {
-      const { data } = await apiClient.post('/api/orders', {
-          customer: {
-            name: name.trim(),
-            phone: phone.trim(),
-            address: address.trim(),
-          },
-          items: cart.items.map((line) => ({
-            item: line._id,
-            size: line.size,
-            quantity: line.quantity,
-          })),
-          subtotal,
-          tax,
-          deliveryCharge: delivery,
-          total: grandTotal,
-          paymentMethod: payment,
-          orderType,
-          sessionId,
-          zone: 'Zone 1 (0-3km)',
-          couponCode: appliedCoupon?.code || '',
+      const { data } = await apiClient.post("/api/orders", {
+        customer: {
+          name: name.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+        },
+        items: cart.items.map((line) => ({
+          item: line._id,
+          size: line.size,
+          quantity: line.quantity,
+        })),
+        subtotal,
+        tax,
+        deliveryCharge: delivery,
+        total: grandTotal,
+        paymentMethod: payment,
+        orderType,
+        sessionId,
+        zone: "Zone 1 (0-3km)",
+        couponCode: appliedCoupon?.code || "",
       });
       if (data.success && data.orderNo) {
-        dispatch({ type: 'CLEAR_CART' });
+        dispatch({ type: "CLEAR_CART" });
         if (sessionId) {
-          await apiClient.put(`/api/sessions/${sessionId}`, {
+          await apiClient
+            .put(`/api/sessions/${sessionId}`, {
               cart: { items: [], total: 0 },
-              checkout: { couponCode: '' },
+              checkout: { couponCode: "" },
             })
             .catch(() => {});
         }
         navigate(
           `/track?order=${encodeURIComponent(data.orderNo)}&id=${encodeURIComponent(data.orderId)}`,
         );
-      } else setError(data.error || 'Could not place order.');
+      } else setError(data.error || "Could not place order.");
     } catch (err) {
       const data = err?.response?.data;
       setError(
         data?.error ||
           (data?.serverTotal != null
             ? `Total mismatch — expected ₹${data.serverTotal}. Refresh and try again.`
-            : 'Network error. Try again.'),
+            : "Network error. Try again."),
       );
     } finally {
       setSubmitting(false);
@@ -209,14 +214,21 @@ export default function Checkout() {
   return (
     <div className="page-fill p-4 max-w-3xl mx-auto pb-16">
       <div className="panel p-6 md:p-8 mb-8 rounded-3xl">
-        <h1 className="font-display text-3xl font-bold text-ink mb-1">Checkout</h1>
-        <p className="text-sm text-ink-muted">Enter your details to place your order.</p>
+        <h1 className="font-display text-3xl font-bold text-ink mb-1">
+          Checkout
+        </h1>
+        <p className="text-sm text-ink-muted">
+          Enter your details to place your order.
+        </p>
       </div>
 
       {!cart.items.length && (
         <div className="panel p-6 mb-8 text-center text-slate-600 rounded-2xl">
-          Your cart is empty.{' '}
-          <Link to="/menu" className="text-delivery-600 font-bold underline underline-offset-2 hover:text-delivery-700">
+          Your cart is empty.{" "}
+          <Link
+            to="/menu"
+            className="text-delivery-600 font-bold underline underline-offset-2 hover:text-delivery-700"
+          >
             Browse the menu
           </Link>
         </div>
@@ -224,7 +236,9 @@ export default function Checkout() {
 
       <div className="panel p-6 md:p-8 space-y-5 mb-8">
         <div>
-          <label className="block text-sm font-medium text-slate-800 mb-1.5">Full name *</label>
+          <label className="block text-sm font-medium text-slate-800 mb-1.5">
+            Full name *
+          </label>
           <input
             className="input-field min-h-[44px]"
             value={name}
@@ -233,7 +247,9 @@ export default function Checkout() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-800 mb-1.5">Phone *</label>
+          <label className="block text-sm font-medium text-slate-800 mb-1.5">
+            Phone *
+          </label>
           <input
             className="input-field min-h-[44px]"
             placeholder="+91 XXXXX XXXXX"
@@ -244,7 +260,8 @@ export default function Checkout() {
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-800 mb-1.5">
-            Delivery address {orderType === 'delivery' ? '*' : '(optional for takeaway)'}
+            Delivery address{" "}
+            {orderType === "delivery" ? "*" : "(optional for takeaway)"}
           </label>
           <textarea
             className="input-field min-h-[100px] resize-y"
@@ -258,22 +275,22 @@ export default function Checkout() {
           <button
             type="button"
             className={`flex-1 min-h-[44px] rounded-xl py-2.5 text-sm font-bold transition-colors focus-ring ${
-              orderType === 'delivery'
-                ? 'bg-white text-ink shadow-md border border-delivery-200'
-                : 'text-ink-muted hover:bg-white/70'
+              orderType === "delivery"
+                ? "bg-white text-ink shadow-md border border-delivery-200"
+                : "text-ink-muted hover:bg-white/70"
             }`}
-            onClick={() => setOrderType('delivery')}
+            onClick={() => setOrderType("delivery")}
           >
             Delivery
           </button>
           <button
             type="button"
             className={`flex-1 min-h-[44px] rounded-xl py-2.5 text-sm font-bold transition-colors focus-ring ${
-              orderType === 'takeaway'
-                ? 'bg-white text-ink shadow-md border border-delivery-200'
-                : 'text-ink-muted hover:bg-white/70'
+              orderType === "takeaway"
+                ? "bg-white text-ink shadow-md border border-delivery-200"
+                : "text-ink-muted hover:bg-white/70"
             }`}
-            onClick={() => setOrderType('takeaway')}
+            onClick={() => setOrderType("takeaway")}
           >
             Takeaway
           </button>
@@ -282,7 +299,9 @@ export default function Checkout() {
 
       {cart.items.length > 0 && (
         <div className="panel p-6 md:p-8 mb-8 space-y-3">
-          <h3 className="font-display font-semibold text-lg text-slate-900">Promo code</h3>
+          <h3 className="font-display font-semibold text-lg text-slate-900">
+            Promo code
+          </h3>
           <p className="text-sm text-slate-600">
             Enter a code from our menu offers. Discount applies to subtotal.
           </p>
@@ -293,7 +312,7 @@ export default function Checkout() {
               value={couponInput}
               onChange={(e) => {
                 setCouponInput(e.target.value);
-                setCouponError('');
+                setCouponError("");
               }}
               autoComplete="off"
               spellCheck={false}
@@ -304,7 +323,7 @@ export default function Checkout() {
               onClick={() => validateAndApplyCoupon(couponInput, subtotal)}
               className="btn-primary min-h-[44px] px-6 rounded-xl shrink-0 disabled:opacity-50"
             >
-              {couponBusy ? 'Checking…' : 'Apply'}
+              {couponBusy ? "Checking…" : "Apply"}
             </button>
             {appliedCoupon && (
               <button
@@ -312,7 +331,7 @@ export default function Checkout() {
                 className="btn-secondary min-h-[44px] px-4 rounded-xl shrink-0"
                 onClick={() => {
                   setAppliedCoupon(null);
-                  setCouponError('');
+                  setCouponError("");
                 }}
               >
                 Remove
@@ -327,8 +346,9 @@ export default function Checkout() {
           {appliedCoupon && !couponError && (
             <p className="text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
               Applied <strong>{appliedCoupon.code}</strong>
-              {appliedCoupon.title ? ` — ${appliedCoupon.title}` : ''}. You save{' '}
-              <strong className="tabular-nums">₹{discountAmount}</strong> on this order.
+              {appliedCoupon.title ? ` — ${appliedCoupon.title}` : ""}. You save{" "}
+              <strong className="tabular-nums">₹{discountAmount}</strong> on
+              this order.
             </p>
           )}
         </div>
@@ -351,7 +371,9 @@ export default function Checkout() {
           <span className="tabular-nums">₹{tax}</span>
         </div> */}
         <div className="flex justify-between text-sm">
-          <span className="text-slate-600">{orderType === 'delivery' ? 'Delivery' : 'Pickup'}</span>
+          <span className="text-slate-600">
+            {orderType === "delivery" ? "Delivery" : "Pickup"}
+          </span>
           <span className="tabular-nums">₹{delivery}</span>
         </div>
         <div className="flex justify-between font-bold text-lg text-delivery-800 pt-3 mt-2 border-t border-slate-200">
@@ -361,18 +383,20 @@ export default function Checkout() {
       </div>
 
       <div className="panel p-6 md:p-8 mb-8">
-        <h3 className="font-display font-semibold text-lg text-slate-900 mb-4">Payment</h3>
+        <h3 className="font-display font-semibold text-lg text-slate-900 mb-4">
+          Payment
+        </h3>
         <div className="space-y-3 mb-5">
           <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
             <input
               type="radio"
               name="pay"
               className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
-              checked={payment === 'UPI'}
-              onChange={() => setPayment('UPI')}
+              checked={payment === "UPI"}
+              onChange={() => setPayment("UPI")}
             />
             <span className="text-slate-800">
-              {hasUpiDetails ? 'UPI (QR / ID below)' : 'UPI'}
+              {hasUpiDetails ? "UPI (QR / ID below)" : "UPI"}
             </span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer min-h-[44px]">
@@ -380,17 +404,21 @@ export default function Checkout() {
               type="radio"
               name="pay"
               className="w-4 h-4 text-delivery-600 border-slate-300 focus:ring-delivery-500"
-              checked={payment === 'COD'}
-              onChange={() => setPayment('COD')}
+              checked={payment === "COD"}
+              onChange={() => setPayment("COD")}
             />
-            <span className="text-slate-800">Cash on delivery / at counter</span>
+            <span className="text-slate-800">
+              Cash on delivery / at counter
+            </span>
           </label>
         </div>
         {hasUpiDetails && (
           <div className="rounded-xl border border-slate-200 bg-slate-50/90 p-4 space-y-4">
             {paySettings.qrUrl && (
               <div>
-                <div className="text-sm font-medium text-slate-800 mb-2">UPI QR</div>
+                <div className="text-sm font-medium text-slate-800 mb-2">
+                  UPI QR
+                </div>
                 <div className="rounded-lg border border-slate-200 bg-white overflow-hidden max-w-xs mx-auto sm:mx-0">
                   <img
                     src={paySettings.qrUrl}
@@ -409,8 +437,35 @@ export default function Checkout() {
             )}
             {paySettings.upiId?.trim() && (
               <div>
-                <div className="text-sm font-medium text-slate-800 mb-1">UPI ID</div>
-                <p className="text-sm text-slate-900 font-mono break-all">{paySettings.upiId.trim()}</p>
+                <div className="text-sm font-medium text-slate-800 mb-1">
+                  UPI ID
+                </div>
+                {/* <p className="text-sm text-slate-900 font-mono break-all">{paySettings.upiId.trim()}</p> */}
+                <div>
+                  {/* <label htmlFor="admin-upi-id" className="block text-sm font-medium text-slate-800 mb-1.5">
+                    VPA / UPI ID shown at checkout
+                  </label> */}
+
+                  <div className="relative">
+                    <input
+                      id="admin-upi-id"
+                      className={`input-field min-h-[44px] pr-24`}
+                      value={paySettings.upiId.trim()}
+                      autoComplete="off"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () =>
+                        await navigator.clipboard.writeText(
+                          paySettings.upiId.trim(),
+                        )
+                      }
+                      className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center rounded-lg border border-delivery-200 bg-white px-3 py-1.5 text-xs font-semibold text-delivery-700 shadow-sm transition hover:bg-delivery-50 hover:border-delivery-300 active:scale-[0.98]"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -429,7 +484,7 @@ export default function Checkout() {
         onClick={placeOrder}
         className="w-full btn-primary py-4 text-lg rounded-2xl disabled:opacity-45 disabled:pointer-events-none"
       >
-        {submitting ? 'Placing order…' : 'Place order'}
+        {submitting ? "Placing order…" : "Place order"}
       </button>
     </div>
   );

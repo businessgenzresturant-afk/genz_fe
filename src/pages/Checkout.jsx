@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { useSession } from '../context/SessionContext.jsx';
 import { apiClient } from '../utils/api.js';
+import { getDeliveryCharge } from '../utils/deliveryCharge.js';
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ export default function Checkout() {
   const discountAmount = appliedCoupon ? Math.min(appliedCoupon.discountAmount, subtotal) : 0;
   const afterDiscount = Math.max(0, subtotal - discountAmount);
   const tax = Math.round(afterDiscount * 0.05);
-  const delivery = orderType === 'delivery' && subtotal > 0 ? 30 : 0;
+  const delivery = getDeliveryCharge(orderType, afterDiscount);
   const grandTotal = afterDiscount + tax + delivery;
 
   const hasUpiDetails =

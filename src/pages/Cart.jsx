@@ -1,11 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
+import { getDeliveryCharge } from '../utils/deliveryCharge.js';
 
 export default function Cart() {
   const { cart, dispatch } = useCart();
   const subtotal = cart.total;
   const tax = Math.round(subtotal * 0.05);
-  const delivery = subtotal > 0 ? 30 : 0;
+  const delivery = getDeliveryCharge('delivery', subtotal);
   const grandTotal = subtotal + tax + delivery;
 
   return (

@@ -5,7 +5,8 @@ import { getDeliveryCharge } from '../utils/deliveryCharge.js';
 export default function Cart() {
   const { cart, dispatch } = useCart();
   const subtotal = cart.total;
-  const tax = Math.round(subtotal * 0.05);
+  // GST excluded from totals (was: Math.round(subtotal * 0.05))
+  const tax = 0;
   const delivery = getDeliveryCharge('delivery', subtotal);
   const grandTotal = subtotal + tax + delivery;
 
@@ -76,10 +77,11 @@ export default function Cart() {
               <span className="text-slate-600">Subtotal</span>
               <span className="tabular-nums font-medium">₹{subtotal}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            {/* GST line hidden — calculation commented out above */}
+            {/* <div className="flex justify-between text-sm">
               <span className="text-slate-600">GST (5%)</span>
               <span className="tabular-nums font-medium">₹{tax}</span>
-            </div>
+            </div> */}
             <div className="flex justify-between text-sm font-medium">
               <span className="text-slate-600">Delivery</span>
               <span className="tabular-nums">₹{delivery}</span>

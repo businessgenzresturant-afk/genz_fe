@@ -123,7 +123,8 @@ export default function Checkout() {
   const subtotal = cart.total;
   const discountAmount = appliedCoupon ? Math.min(appliedCoupon.discountAmount, subtotal) : 0;
   const afterDiscount = Math.max(0, subtotal - discountAmount);
-  const tax = Math.round(afterDiscount * 0.05);
+  // GST excluded from totals (was: Math.round(afterDiscount * 0.05))
+  const tax = 0;
   const delivery = getDeliveryCharge(orderType, afterDiscount);
   const grandTotal = afterDiscount + tax + delivery;
 
@@ -283,7 +284,7 @@ export default function Checkout() {
         <div className="panel p-6 md:p-8 mb-8 space-y-3">
           <h3 className="font-display font-semibold text-lg text-slate-900">Promo code</h3>
           <p className="text-sm text-slate-600">
-            Enter a code from our menu offers. Discount applies to subtotal before tax.
+            Enter a code from our menu offers. Discount applies to subtotal.
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
             <input
@@ -344,10 +345,11 @@ export default function Checkout() {
             <span className="tabular-nums font-medium">−₹{discountAmount}</span>
           </div>
         )}
-        <div className="flex justify-between text-sm">
+        {/* GST line hidden — calculation commented out above */}
+        {/* <div className="flex justify-between text-sm">
           <span className="text-slate-600">GST (5%)</span>
           <span className="tabular-nums">₹{tax}</span>
-        </div>
+        </div> */}
         <div className="flex justify-between text-sm">
           <span className="text-slate-600">{orderType === 'delivery' ? 'Delivery' : 'Pickup'}</span>
           <span className="tabular-nums">₹{delivery}</span>

@@ -1,12 +1,9 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import io from "socket.io-client";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { useAdminOrdersSocket } from "../../context/AdminOrdersSocketContext.jsx";
 import NotificationPrompt from "../../components/NotificationPrompt.jsx";
-import { showNotification } from "../../utils/browserNotifications.js";
 import { apiClient } from "../../utils/api.js";
-
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || "http://127.0.0.1:5000";
 
 function csvEscape(val) {
   if (val == null || val === "") return "";
@@ -108,15 +105,10 @@ export default function Dashboard() {
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [exportBusy, setExportBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
-  const socketRef = useRef();
-  const ordersRef = useRef([]);
   const navigate = useNavigate();
+  const socket = useAdminOrdersSocket();
   const { token, refreshAuth } = useAuth();
   const [expandedOrder, setExpandedOrder] = useState(null);
-
-  useEffect(() => {
-    ordersRef.current = orders;
-  }, [orders]);
 
   const mergeOrder = useCallback((updated) => {
     if (!updated || updated._id == null) return;
@@ -150,45 +142,27 @@ export default function Dashboard() {
       .then(({ data }) => (Array.isArray(data) ? data : []))
       .then((data) => setOrders(Array.isArray(data) ? data : []))
       .catch(() => setOrders([]));
+  }, [token, navigate]);
 
-    socketRef.current = io(SOCKET_URL);
-    socketRef.current.emit("join-dashboard");
+  useEffect(() => {
+    if (!token || !socket) return;
 
-    socketRef.current.on("new-order", (order) => {
+    const onNewOrder = (order) => {
       setOrders((prev) => {
         const withoutDemo = prev.filter((o) => !o.readOnly);
         return [order, ...withoutDemo];
       });
-      if (order) {
-        const label = order.orderNo ? `#${order.orderNo}` : "New order";
-        const total = order.total != null ? `₹${order.total}` : "";
-        showNotification("New order", {
-          body: [label, total].filter(Boolean).join(" · "),
-          tag: `genz-new-${order._id}`,
-        });
-      }
-    });
+    };
 
-    socketRef.current.on("order-updated", (order) => {
+    const onOrderUpdated = (order) => {
       if (!order?._id) {
         mergeOrder(order);
         return;
       }
-      const id = String(order._id);
-      const prevStatus = ordersRef.current.find(
-        (o) => String(o._id) === id,
-      )?.status;
-      const newStatus = order.status || "Confirmed";
       mergeOrder(order);
-      if (prevStatus !== undefined && prevStatus !== newStatus) {
-        showNotification(`Order ${order.orderNo || id}`, {
-          body: `Status: ${newStatus}`,
-          tag: `genz-upd-${id}-${newStatus}`,
-        });
-      }
-    });
+    };
 
-    socketRef.current.on("order-deleted", (payload) => {
+    const onOrderDeleted = (payload) => {
       const id = payload?._id;
       if (id == null) return;
       setOrders((prev) => prev.filter((o) => String(o._id) !== String(id)));
@@ -197,9 +171,9 @@ export default function Dashboard() {
         next.delete(String(id));
         return next;
       });
-    });
+    };
 
-    socketRef.current.on("orders-bulk-deleted", async () => {
+    const onOrdersBulkDeleted = async () => {
       try {
         const res = await apiClient.get("/api/orders", {
           headers: { Authorization: `Bearer ${token}` },
@@ -209,10 +183,20 @@ export default function Dashboard() {
         setOrders([]);
       }
       setSelectedIds(new Set());
-    });
+    };
 
-    return () => socketRef.current?.disconnect();
-  }, [token, mergeOrder, navigate]);
+    socket.on("new-order", onNewOrder);
+    socket.on("order-updated", onOrderUpdated);
+    socket.on("order-deleted", onOrderDeleted);
+    socket.on("orders-bulk-deleted", onOrdersBulkDeleted);
+
+    return () => {
+      socket.off("new-order", onNewOrder);
+      socket.off("order-updated", onOrderUpdated);
+      socket.off("order-deleted", onOrderDeleted);
+      socket.off("orders-bulk-deleted", onOrdersBulkDeleted);
+    };
+  }, [token, socket, mergeOrder]);
 
   const patchStatus = async (orderId, status) => {
     setBusyId(String(orderId));

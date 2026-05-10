@@ -100,6 +100,7 @@ export default function OrderTrack() {
       showNotification(`Order #${label}`, {
         body,
         tag: `track-${tagKey}-${s}`,
+        sound: 'order-status',
       });
     }
   }, [order, trackId, urlOrderNo]);

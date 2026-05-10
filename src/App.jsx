@@ -12,10 +12,35 @@ import Login from './pages/admin/Login.jsx';
 import Dashboard from './pages/admin/Dashboard.jsx';
 import AdminMenu from './pages/admin/AdminMenu.jsx';
 import AdminPayment from './pages/admin/AdminPayment.jsx';
+import { AdminOrdersSocketProvider } from './context/AdminOrdersSocketContext.jsx';
+import { useEffect } from 'react';
+import { tryUnlockNotificationSounds } from './utils/notificationSound.js';
 
 export default function App() {
+  useEffect(() => {
+    let done = false;
+    const remove = () => {
+      window.removeEventListener('pointerdown', onInteraction, listenerOpts);
+      window.removeEventListener('keydown', onInteraction, listenerOpts);
+    };
+    const maybeUnlock = async () => {
+      if (done) return;
+      const ok = await tryUnlockNotificationSounds();
+      if (!ok) return;
+      done = true;
+      remove();
+    };
+    const onInteraction = () => {
+      void maybeUnlock();
+    };
+    const listenerOpts = { capture: true, passive: true };
+    window.addEventListener('pointerdown', onInteraction, listenerOpts);
+    window.addEventListener('keydown', onInteraction, listenerOpts);
+    return () => remove();
+  }, []);
+
   return (
-    <>
+    <AdminOrdersSocketProvider>
       <Toaster
         position="bottom-right"
         gutter={12}
@@ -92,6 +117,6 @@ export default function App() {
           }
         />
       </Routes>
-    </>
+    </AdminOrdersSocketProvider>
   );
 }

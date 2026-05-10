@@ -5,6 +5,31 @@ import { useSession } from "../context/SessionContext.jsx";
 import { apiClient } from "../utils/api.js";
 import { getDeliveryCharge } from "../utils/deliveryCharge.js";
 
+const PHONE_DIGITS = 10;
+
+/** Digits only, max {@link PHONE_DIGITS}; strips leading 91 / 0 from pasted Indian numbers */
+function normalizeCheckoutPhone(raw) {
+  let d = String(raw || "").replace(/\D/g, "");
+  if (d.length >= PHONE_DIGITS + 2 && d.startsWith("91")) {
+    d = d.slice(2);
+  }
+  if (d.length > PHONE_DIGITS && /^0+/.test(d)) {
+    d = d.replace(/^0+/, "");
+  }
+  return d.slice(0, PHONE_DIGITS);
+}
+
+function isValidIndianMobile(digits) {
+  return /^[6-9]\d{9}$/.test(digits);
+}
+
+/** Letters etc. blocked; digits and common phone separators (+spaces-dashes parens dots) allowed while typing/pasting */
+const PHONE_CHARS_ALLOWED = /^[\d+\s().-]*$/;
+
+function phoneHasDisallowedCharacters(raw) {
+  return raw.length > 0 && !PHONE_CHARS_ALLOWED.test(raw);
+}
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { cart, dispatch, storageReady } = useCart();
@@ -14,6 +39,7 @@ export default function Checkout() {
   const [payment, setPayment] = useState("COD");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [address, setAddress] = useState("");
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -32,7 +58,7 @@ export default function Checkout() {
         if (!data?.checkout) return;
         const c = data.checkout;
         if (c.name) setName(c.name);
-        if (c.phone) setPhone(c.phone);
+        if (c.phone) setPhone(normalizeCheckoutPhone(c.phone));
         if (c.address) setAddress(c.address);
         if (c.orderType === "takeaway" || c.orderType === "delivery")
           setOrderType(c.orderType);
@@ -149,8 +175,19 @@ export default function Checkout() {
 
   const placeOrder = async () => {
     setError("");
-    if (!name.trim() || !phone.trim()) {
-      setError("Please enter your name and phone.");
+    setPhoneError("");
+    if (!name.trim()) {
+      setError("Please enter your name.");
+      return;
+    }
+    const phoneDigits = normalizeCheckoutPhone(phone);
+    if (!isValidIndianMobile(phoneDigits)) {
+      const msg =
+        phoneDigits.length < PHONE_DIGITS
+          ? `Enter all ${PHONE_DIGITS} digits (${phoneDigits.length}/${PHONE_DIGITS}).`
+          : "Mobile number must start with 6, 7, 8, or 9.";
+      setPhoneError(msg);
+      setError(msg);
       return;
     }
     if (orderType === "delivery" && !address.trim()) {
@@ -166,7 +203,7 @@ export default function Checkout() {
       const { data } = await apiClient.post("/api/orders", {
         customer: {
           name: name.trim(),
-          phone: phone.trim(),
+          phone: phoneDigits,
           address: address.trim(),
         },
         items: cart.items.map((line) => ({
@@ -247,16 +284,71 @@ export default function Checkout() {
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-800 mb-1.5">
+          <label
+            htmlFor="checkout-phone"
+            className="block text-sm font-medium text-slate-800 mb-1.5"
+          >
             Phone *
           </label>
           <input
-            className="input-field min-h-[44px]"
-            placeholder="+91 XXXXX XXXXX"
+            id="checkout-phone"
+            type="tel"
+            inputMode="numeric"
+            aria-invalid={phoneError ? "true" : "false"}
+            aria-describedby={phoneError ? "checkout-phone-error" : undefined}
+            className={`input-field min-h-[44px] ${phoneError ? "border-rose-400 focus:border-rose-500" : ""}`}
+            placeholder="10-digit mobile number"
+            maxLength={PHONE_DIGITS}
+            pattern="\d{10}"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            autoComplete="tel"
+            onChange={(e) => {
+              const raw = e.target.value;
+              const next = normalizeCheckoutPhone(raw);
+              setPhone(next);
+              const disallowedMsg =
+                "Use only numbers. Letters and symbols are not allowed.";
+              if (phoneHasDisallowedCharacters(raw)) {
+                setPhoneError(disallowedMsg);
+                return;
+              }
+              if (isValidIndianMobile(next)) {
+                setPhoneError("");
+                return;
+              }
+              setPhoneError((prev) =>
+                prev === disallowedMsg ? "" : prev,
+              );
+            }}
+            onBlur={() => {
+              if (phone.length === 0) {
+                setPhoneError((prev) =>
+                  prev === "Use only numbers. Letters and symbols are not allowed."
+                    ? ""
+                    : prev,
+                );
+                return;
+              }
+              if (!isValidIndianMobile(phone)) {
+                setPhoneError(
+                  phone.length < PHONE_DIGITS
+                    ? `Enter ${PHONE_DIGITS}-digit mobile number (${phone.length}/${PHONE_DIGITS}).`
+                    : "Mobile number must start with 6, 7, 8, or 9.",
+                );
+              } else {
+                setPhoneError("");
+              }
+            }}
+            autoComplete="tel-national"
           />
+          {phoneError ? (
+            <p
+              id="checkout-phone-error"
+              className="mt-1.5 text-sm text-rose-600"
+              role="alert"
+            >
+              {phoneError}
+            </p>
+          ) : null}
         </div>
         <div>
           <label className="block text-sm font-medium text-slate-800 mb-1.5">

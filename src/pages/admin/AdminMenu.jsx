@@ -148,7 +148,7 @@ export default function AdminMenu() {
         name: addForm.name.trim(),
         category: addForm.category.trim(),
         veg: addForm.veg,
-        halfPrice,
+        halfPrice: halfPrice ?? 0,
         fullPrice,
         isSpecial: addForm.isSpecial,
         available: true,
@@ -344,7 +344,7 @@ export default function AdminMenu() {
       await apiClient.patch(`/api/menu/${editingId}`, {
         name: editForm.name.trim(),
         category: editForm.category.trim(),
-        halfPrice,
+        halfPrice: halfPrice ?? 0,
         fullPrice,
         veg: editForm.veg,
         isSpecial: editForm.isSpecial,

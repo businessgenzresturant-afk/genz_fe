@@ -6,7 +6,12 @@ import { apiClient } from '../utils/api.js';
 const CartContext = createContext();
 
 const calcTotal = (items = []) => items.reduce((sum, line) => {
-  const unitPrice = line.size === 'half' ? line.halfPrice : line.fullPrice;
+  const halfOk =
+    line.size === 'half' &&
+    line.halfPrice != null &&
+    Number.isFinite(Number(line.halfPrice)) &&
+    Number(line.halfPrice) > 0;
+  const unitPrice = halfOk ? line.halfPrice : line.fullPrice;
   return sum + unitPrice * line.quantity;
 }, 0);
 

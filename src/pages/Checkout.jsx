@@ -205,6 +205,7 @@ export default function Checkout() {
           name: name.trim(),
           phone: phoneDigits,
           address: address.trim(),
+          ...(sessionId ? { uio: sessionId } : {}),
         },
         items: cart.items.map((line) => ({
           item: line._id,

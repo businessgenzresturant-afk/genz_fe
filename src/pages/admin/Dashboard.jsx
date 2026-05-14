@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useAdminOrdersSocket } from "../../context/AdminOrdersSocketContext.jsx";
 import NotificationPrompt from "../../components/NotificationPrompt.jsx";
+import CustomerDetailsCompact from "../../components/CustomerDetailsCompact.jsx";
+import CopyableValue from "../../components/CopyableValue.jsx";
 import { apiClient } from "../../utils/api.js";
 
 function csvEscape(val) {
@@ -23,6 +25,7 @@ function buildCsvFromOrders(list) {
     "customerName",
     "customerPhone",
     "customerAddress",
+    "customerUio",
     "status",
     "subtotal",
     "discountAmount",
@@ -55,6 +58,7 @@ function buildCsvFromOrders(list) {
       csvEscape(o.customer?.name),
       csvEscape(o.customer?.phone),
       csvEscape((o.customer?.address || "").replace(/\r?\n/g, " ")),
+      csvEscape(o.customer?.uio ?? o.customer?.uid),
       csvEscape(o.status),
       o.subtotal ?? "",
       o.discountAmount ?? "",
@@ -588,9 +592,15 @@ export default function Dashboard() {
                         aria-label={`Select order ${order.orderNo}`}
                       />
                     )}
-                    <span className="font-semibold text-delivery-700">
-                      #{order.orderNo}
-                    </span>
+                    <CopyableValue
+                      value={order.orderNo}
+                      copyLabel="Copy order number"
+                      className="font-semibold text-delivery-700"
+                    >
+                      <span className="font-semibold text-delivery-700">
+                        #{order.orderNo}
+                      </span>
+                    </CopyableValue>
                   </div>
 
                   <StatusBadge status={status} />
@@ -626,52 +636,74 @@ export default function Dashboard() {
 
                 {/* ITEMS LIST */}
                 {expandedOrder === id && (
-                  <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <h4 className="mb-3 text-sm font-semibold text-slate-800">
-                      Order Items
-                    </h4>
+                  <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-4">
+                    <CustomerDetailsCompact order={order} />
 
-                    <div className="space-y-3">
-                      {order.items?.map((item, index) => (
-                        <div
-                          key={item._id || index}
-                          className="flex items-start justify-between rounded-lg bg-white p-3 border border-slate-100"
+                    {/* {isLiveOrderId(String(id)) && (
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+                        <span className="shrink-0 font-semibold uppercase tracking-wide text-slate-500">
+                          Order id
+                        </span>
+                        <CopyableValue
+                          value={String(id)}
+                          copyLabel="Copy order id"
+                          compact
+                          className="min-w-0 max-w-full flex-1"
                         >
-                          <div className="min-w-0">
-                            <p className="font-medium text-slate-900">
-                              {item.item?.name}{" "}
-                              <span className="text-slate-500">
-                                ({item.size})
-                              </span>
-                            </p>
+                          <span className="block min-w-0 max-w-full truncate font-mono text-[11px] text-slate-800">
+                            {String(id)}
+                          </span>
+                        </CopyableValue>
+                      </div>
+                    )} */}
 
-                            <div className="mt-1 flex flex-wrap gap-2 text-xs ">
-                              {item.item?.category && (
-                                <span>{item.item?.category}</span>
-                              )}
-                              {console.log(item)}
+                    <div>
+                      <h4 className="mb-3 text-sm font-semibold text-slate-800">
+                        Order Items
+                      </h4>
 
-                              {/* {item.item?.veg !== undefined && (
+                      <div className="space-y-3">
+                        {order.items?.map((item, index) => (
+                          <div
+                            key={item._id || index}
+                            className="flex items-start justify-between rounded-lg bg-white p-3 border border-slate-100"
+                          >
+                            <div className="min-w-0">
+                              <p className="font-medium text-slate-900">
+                                {item.item?.name}{" "}
+                                <span className="text-slate-500">
+                                  ({item.size})
+                                </span>
+                              </p>
+
+                              <div className="mt-1 flex flex-wrap gap-2 text-xs ">
+                                {item.item?.category && (
+                                  <span>{item.item?.category}</span>
+                                )}
+                                {console.log(item)}
+
+                                {/* {item.item?.veg !== undefined && (
                 <span>
                   {item.veg ? '🟢 Veg' : '🔴 Non-Veg'}
                 </span>
               )} */}
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <p className="font-semibold text-slate-900">
+                                × {item.quantity}
+                              </p>
+
+                              {item.price && (
+                                <p className="text-sm text-slate-500">
+                                  ₹{item.price}
+                                </p>
+                              )}
                             </div>
                           </div>
-
-                          <div className="text-right shrink-0">
-                            <p className="font-semibold text-slate-900">
-                              × {item.quantity}
-                            </p>
-
-                            {item.price && (
-                              <p className="text-sm text-slate-500">
-                                ₹{item.price}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}

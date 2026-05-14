@@ -122,16 +122,34 @@ export default function AdminMenu() {
     setOfferExpiryDrafts(next);
   }, [offers]);
 
+  const parseOptionalHalfPrice = (raw) => {
+    const s = String(raw ?? '').trim();
+    if (s === '') return null;
+    const n = Number(s);
+    if (!Number.isFinite(n) || n < 0) return NaN;
+    return n;
+  };
+
   const handleAddItem = async (e) => {
     e.preventDefault();
+    const halfPrice = parseOptionalHalfPrice(addForm.halfPrice);
+    if (Number.isNaN(halfPrice)) {
+      setAddStatus('Half price must be empty or a valid non-negative number.');
+      return;
+    }
+    const fullPrice = Number(addForm.fullPrice);
+    if (!Number.isFinite(fullPrice) || fullPrice < 0) {
+      setAddStatus('Enter a valid full (₹) price.');
+      return;
+    }
     setAddStatus('Saving…');
     try {
       await apiClient.post('/api/menu', {
         name: addForm.name.trim(),
         category: addForm.category.trim(),
         veg: addForm.veg,
-        halfPrice: Number(addForm.halfPrice),
-        fullPrice: Number(addForm.fullPrice),
+        halfPrice,
+        fullPrice,
         isSpecial: addForm.isSpecial,
         available: true,
       }, {
@@ -311,13 +329,23 @@ export default function AdminMenu() {
   const saveEdit = async (e) => {
     e.preventDefault();
     if (!editingId || !editForm) return;
+    const halfPrice = parseOptionalHalfPrice(editForm.halfPrice);
+    if (Number.isNaN(halfPrice)) {
+      setEditStatus('Half price must be empty or a valid non-negative number.');
+      return;
+    }
+    const fullPrice = Number(editForm.fullPrice);
+    if (!Number.isFinite(fullPrice) || fullPrice < 0) {
+      setEditStatus('Enter a valid full (₹) price.');
+      return;
+    }
     setEditStatus('Saving…');
     try {
       await apiClient.patch(`/api/menu/${editingId}`, {
         name: editForm.name.trim(),
         category: editForm.category.trim(),
-        halfPrice: Number(editForm.halfPrice),
-        fullPrice: Number(editForm.fullPrice),
+        halfPrice,
+        fullPrice,
         veg: editForm.veg,
         isSpecial: editForm.isSpecial,
         available: editForm.available,
@@ -416,16 +444,16 @@ export default function AdminMenu() {
             </div>
             <div>
               <label htmlFor={`${formIds}-h`} className="block text-sm font-medium text-slate-800 mb-1.5">
-                Half (₹) <span className="text-rose-600">*</span>
+                Half (₹) <span className="text-slate-400 font-normal">(optional)</span>
               </label>
               <input
                 id={`${formIds}-h`}
                 type="number"
                 min="0"
-                required
                 className={inputClass}
                 value={addForm.halfPrice}
                 onChange={(e) => setAddForm((f) => ({ ...f, halfPrice: e.target.value }))}
+                placeholder="Leave blank for full portion only"
               />
             </div>
             <div>
@@ -815,14 +843,16 @@ export default function AdminMenu() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-slate-600 mb-1">Half (₹)</label>
+                          <label className="block text-xs font-semibold text-slate-600 mb-1">
+                            Half (₹) <span className="text-slate-400 font-normal">(optional)</span>
+                          </label>
                           <input
-                            required
                             type="number"
                             min="0"
                             className={inputClass}
                             value={editForm.halfPrice}
                             onChange={(e) => setEditForm((f) => ({ ...f, halfPrice: e.target.value }))}
+                            placeholder="Blank = full only"
                           />
                         </div>
                         <div>
@@ -906,7 +936,12 @@ export default function AdminMenu() {
                       )}
                     </div>
                     <div className="text-sm text-slate-600 mt-1 tabular-nums">
-                      Half ₹{item.halfPrice} · Full ₹{item.fullPrice}
+                      {Number.isFinite(Number(item.halfPrice)) && Number(item.halfPrice) > 0 ? (
+                        <>Half ₹{item.halfPrice} · </>
+                      ) : (
+                        <span className="text-slate-500">Full portion only · </span>
+                      )}
+                      Full ₹{item.fullPrice}
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-3 shrink-0">

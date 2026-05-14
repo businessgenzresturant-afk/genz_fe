@@ -161,10 +161,16 @@ function groupItemsByCategory(items) {
   return [...map.entries()];
 }
 
+function itemHasHalfPortion(item) {
+  const n = Number(item?.halfPrice);
+  return Number.isFinite(n) && n > 0;
+}
+
 /* ===========================
    🔥 MINIMALIST MENU LIST ITEM
 =========================== */
 function MenuListItem({ item, dispatch, canOrder }) {
+  const hasHalf = itemHasHalfPortion(item);
   return (
     <article className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-5 border-b border-slate-200/60 transition-colors hover:bg-slate-50/50 px-3 rounded-xl">
       <div className="flex-1 min-w-0">
@@ -185,24 +191,35 @@ function MenuListItem({ item, dispatch, canOrder }) {
 
       <div className="flex items-center gap-5 sm:gap-8 shrink-0 ml-5 sm:ml-0">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-sm">
-          <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-2 w-full sm:w-auto">
-            <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Half</span>
-            <span className="font-bold text-slate-700 text-base">₹{item.halfPrice}</span>
-          </div>
-          <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-2 w-full sm:w-auto">
-            <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Full</span>
-            <span className="font-bold text-slate-900 text-base">₹{item.fullPrice}</span>
-          </div>
+          {hasHalf ? (
+            <>
+              <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-2 w-full sm:w-auto">
+                <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Half</span>
+                <span className="font-bold text-slate-700 text-base">₹{item.halfPrice}</span>
+              </div>
+              <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-2 w-full sm:w-auto">
+                <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Full</span>
+                <span className="font-bold text-slate-900 text-base">₹{item.fullPrice}</span>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-2 w-full sm:w-auto">
+              <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider">Full</span>
+              <span className="font-bold text-slate-900 text-base">₹{item.fullPrice}</span>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2">
-          <button
-            disabled={!canOrder}
-            onClick={() => dispatch({ type: 'ADD_ITEM', payload: { item, size: 'half' } })}
-            className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm disabled:opacity-40 transition-all focus:outline-none focus:ring-2 focus:ring-slate-200"
-          >
-            Add Half
-          </button>
+          {hasHalf ? (
+            <button
+              disabled={!canOrder}
+              onClick={() => dispatch({ type: 'ADD_ITEM', payload: { item, size: 'half' } })}
+              className="h-10 px-4 rounded-xl border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 hover:shadow-sm disabled:opacity-40 transition-all focus:outline-none focus:ring-2 focus:ring-slate-200"
+            >
+              Add Half
+            </button>
+          ) : null}
           <button
             disabled={!canOrder}
             onClick={() => dispatch({ type: 'ADD_ITEM', payload: { item, size: 'full' } })}

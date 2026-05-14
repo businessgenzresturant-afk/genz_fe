@@ -2,6 +2,15 @@ import { Link } from 'react-router-dom';
 import { useCart } from '../context/CartContext.jsx';
 import { getDeliveryCharge } from '../utils/deliveryCharge.js';
 
+function lineUnitPrice(line) {
+  const halfOk =
+    line.size === 'half' &&
+    line.halfPrice != null &&
+    Number.isFinite(Number(line.halfPrice)) &&
+    Number(line.halfPrice) > 0;
+  return halfOk ? line.halfPrice : line.fullPrice;
+}
+
 export default function Cart() {
   const { cart, dispatch } = useCart();
   const subtotal = cart.total;
@@ -38,7 +47,7 @@ export default function Cart() {
                 <span className="text-ink-muted font-semibold">({line.size})</span>
               </h3>
               <div className="text-delivery-700 font-bold tabular-nums">
-                ₹{(line.size === 'half' ? line.halfPrice : line.fullPrice) * line.quantity}
+                ₹{lineUnitPrice(line) * line.quantity}
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">

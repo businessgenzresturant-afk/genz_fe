@@ -2,6 +2,8 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import NotificationPrompt from '../components/NotificationPrompt.jsx';
+import CustomerDetailsCompact from '../components/CustomerDetailsCompact.jsx';
+import CopyableValue from '../components/CopyableValue.jsx';
 import { showNotification } from '../utils/browserNotifications.js';
 import { apiClient } from '../utils/api.js';
 import {
@@ -197,7 +199,7 @@ export default function OrderTrack() {
                 if (entry.id) sp.set('id', entry.id);
                 const href = `/track?${sp.toString()}`;
                 return (
-                  <li key={key} className="flex flex-wrap items-center justify-between gap-2 px-3 py-3">
+                  <li key={key} className="flex flex-wrap items-center gap-2 px-3 py-3">
                     <button
                       type="button"
                       onClick={() => navigate(href)}
@@ -214,16 +216,28 @@ export default function OrderTrack() {
                         </span>
                       )}
                     </button>
-                    <button
-                      type="button"
-                      className="shrink-0 text-xs font-semibold text-slate-500 hover:text-rose-700"
-                      onClick={() => {
-                        removeTrackOrderFromHistory({ id: entry.id, orderNo: entry.orderNo });
-                        setHistoryTick((t) => t + 1);
-                      }}
-                    >
-                      Remove
-                    </button>
+                    <div className="flex shrink-0 items-center gap-0.5">
+                      {entry.orderNo ? (
+                        <CopyableValue
+                          value={entry.orderNo}
+                          buttonOnly
+                          copyLabel="Copy order number"
+                        />
+                      ) : null}
+                      {entry.id ? (
+                        <CopyableValue value={entry.id} buttonOnly copyLabel="Copy order id" />
+                      ) : null}
+                      <button
+                        type="button"
+                        className="ml-1 shrink-0 text-xs font-semibold text-slate-500 hover:text-rose-700"
+                        onClick={() => {
+                          removeTrackOrderFromHistory({ id: entry.id, orderNo: entry.orderNo });
+                          setHistoryTick((t) => t + 1);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </li>
                 );
               })}
@@ -310,17 +324,45 @@ export default function OrderTrack() {
   const status = order.status || 'Confirmed';
   const rejected = status === 'Rejected';
   const currentIdx = stepIndex(status);
-  const addr = order.customer?.address || '—';
 
   return (
     <div className="page-fill p-4 max-w-3xl mx-auto pb-16">
       <div className="panel p-6 md:p-8 mb-8 rounded-3xl bg-gradient-to-br from-delivery-50/80 via-white to-orange-50/40 border-delivery-100">
-        <h1 className="font-display text-2xl md:text-3xl font-bold text-ink mb-1">
-          Order #{order.orderNo}
+        <h1 className="font-display text-2xl md:text-3xl font-bold text-ink mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span>Order</span>
+          {order.orderNo ? (
+            <CopyableValue
+              value={order.orderNo}
+              copyLabel="Copy order number"
+              className="font-bold text-ink"
+            >
+              <span className="tabular-nums">#{order.orderNo}</span>
+            </CopyableValue>
+          ) : (
+            <span>—</span>
+          )}
         </h1>
         <p className="text-sm text-ink-muted">
           {rejected ? 'This order was not accepted.' : 'Live updates from the restaurant'}
         </p>
+        {order._id != null && (
+          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-delivery-100/80 pt-3 text-xs text-slate-600">
+            <span className="shrink-0 font-semibold uppercase tracking-wide text-slate-500">
+              Order id
+            </span>
+            <CopyableValue
+              value={String(order._id)}
+              copyLabel="Copy order id"
+              compact
+              className="min-w-0 max-w-full flex-1 text-slate-800"
+            >
+              <span className="block min-w-0 max-w-[min(100%,18rem)] truncate font-mono text-[11px] text-slate-800 sm:max-w-md">
+                {String(order._id)}
+              </span>
+            </CopyableValue>
+          </div>
+        )}
+
       </div>
 
       <div className="mb-6">
@@ -362,13 +404,9 @@ export default function OrderTrack() {
         </div>
       )}
 
-      <div className="panel p-6 mb-6">
-        <div className="text-sm font-semibold text-slate-800 mb-3">Delivery / pickup</div>
-        <div className="text-slate-700 space-y-1">
-          <div className="font-medium">{order.customer?.name || '—'}</div>
-          <div className="text-sm text-slate-600">{order.customer?.phone || ''}</div>
-          <div className="mt-2 text-slate-800">{addr}</div>
-        </div>
+      <div className="panel p-4 sm:p-5 mb-6">
+        <div className="text-sm font-semibold text-slate-800 mb-2">Delivery / pickup</div>
+        <CustomerDetailsCompact order={order} />
       </div>
 
       <div className="panel p-6 text-sm space-y-2">
